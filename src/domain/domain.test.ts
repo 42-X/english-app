@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { speedAdvice, weaknesses } from './adaptive'
+import { speedAdvice, targetLevel, weaknesses } from './adaptive'
 import { falsePositiveRows, mismatchRows, summarize } from './analysis'
 import { clickLatencyMs, latencyBucket } from './latency'
-import { buildDailyPlan } from './plan'
+import { buildDailyPlan, buildOverclickTest, mismatchCount } from './plan'
+import { overclickReport, pointLosses, rollingDiagnosis, sessionSummary } from './report'
 import { finalSelection, scoreSelection } from './scoring'
 import { isDue, recordMistake, reviewMistake, INTERVALS, MASTERED } from './srs'
 import { blackoutRecoveries, lossEvents, syncMetrics, syncSegments } from './sync'
@@ -361,5 +362,78 @@ describe('text', () => {
     ['rapid', 'sudden', 'semantic'],
   ] as const)('guesses %s → %s as %s', (d, s, cat) => {
     expect(guessTrapCategory(d, s)).toBe(cat)
+  })
+})
+
+describe('difficulty level', () => {
+  const ex = exercise(40, { 5: 'word-family', 15: 'singular-plural', 30: 'near-sound' })
+  it('starts at exam standard', () => {
+    expect(targetLevel([])).toBe(2)
+  })
+  it('drops to easier passages while sync is weak', () => {
+    const as = Array.from({ length: 5 }, () => attempt({ ex, samples: samples(40, (t) => (t % 4000 < 2500 ? -6 : 0)) }))
+    expect(targetLevel(as)).toBe(1)
+  })
+  it('rises only after 20 stable passages', () => {
+    expect(targetLevel(Array.from({ length: 19 }, () => attempt({ ex })))).toBe(2)
+    expect(targetLevel(Array.from({ length: 20 }, () => attempt({ ex })))).toBe(3)
+  })
+})
+
+describe('over-clicking test', () => {
+  const lib: Exercise[] = [
+    ...Array.from({ length: 4 }, (_, i) => exercise(80, {}, { id: `z${i}`, kind: 'overclick' })),
+    ...Array.from({ length: 5 }, (_, i) => exercise(80, { 10: 'number' }, { id: `o${i}`, kind: 'overclick' })),
+    ...Array.from({ length: 4 }, (_, i) => exercise(80, { 10: 'number', 40: 'semantic' }, { id: `t${i}`, kind: 'realistic' })),
+    exercise(80, { 1: 'number', 2: 'number', 3: 'number' }, { id: 'many', kind: 'realistic' }),
+  ]
+  it('builds 10 passages with 0–2 mismatches in a 3/4/3 mix', () => {
+    const test = buildOverclickTest({ date: 'd', exercises: lib, attempts: [], now: 5 })!
+    expect(test.items).toHaveLength(10)
+    const counts = test.items.map((i) => mismatchCount(lib.find((e) => e.id === i.exerciseId)!))
+    expect(counts.filter((c) => c === 0)).toHaveLength(3)
+    expect(counts.filter((c) => c === 1)).toHaveLength(4)
+    expect(Math.max(...counts)).toBeLessThanOrEqual(2)
+    expect(test.items.every((i) => i.mode === 'overclick' && i.speed === 1)).toBe(true)
+  })
+  it('diagnoses a decision-threshold problem from clicks on clean passages', () => {
+    const zero = lib[0]
+    const one = lib[4]
+    const as = [attempt({ ex: zero, selected: [3, 9] }), attempt({ ex: zero, selected: [20] }), attempt({ ex: one, selected: [10] })]
+    const r = overclickReport(as, new Map(lib.map((e) => [e.id, e])))
+    expect(r).toMatchObject({ zeroPassages: 2, clicksOnZero: 3, falseClicks: 3, profile: 'threshold' })
+  })
+  it('separates tracking from discrimination when clicks are clean but misses are high', () => {
+    const two = lib[9]
+    const lost = Array.from({ length: 4 }, () => attempt({ ex: two, selected: [], samples: samples(80, () => -8) }))
+    expect(overclickReport(lost, new Map(lib.map((e) => [e.id, e]))).profile).toBe('tracking')
+    const heard = Array.from({ length: 4 }, () => attempt({ ex: two, selected: [], samples: samples(80, () => 0) }))
+    expect(overclickReport(heard, new Map(lib.map((e) => [e.id, e]))).profile).toBe('discrimination')
+  })
+})
+
+describe('reports', () => {
+  const ex = exercise(40, { 5: 'word-family', 15: 'singular-plural', 30: 'near-sound' })
+  const map = new Map([[ex.id, ex]])
+  it('attributes lost points to false clicks, lost sync and trap types', () => {
+    const a = attempt({ ex, selected: [5, 1, 2], samples: samples(40, (t) => (t >= 5500 && t < 6800 ? -7 : 0)) })
+    const losses = pointLosses([a], map)
+    expect(losses).toContainEqual({ source: 'false-clicks', points: 2 })
+    expect(losses).toContainEqual({ source: 'lost-sync', points: 1 })
+    expect(losses).toContainEqual({ source: 'trap:near-sound', points: 1 })
+  })
+  it('summarises a session against the previous days', () => {
+    const before = Array.from({ length: 4 }, () => attempt({ ex, selected: [5, 1, 2, 3] }))
+    const today = Array.from({ length: 3 }, () => attempt({ ex }))
+    const s = sessionSummary(today, before, [...today, ...before], map)
+    expect(s.net).toBe(9)
+    expect(s.maxNet).toBe(9)
+    expect(s.improved.map((d) => d.metric)).toEqual(expect.arrayContaining(['precision', 'fpPerPassage']))
+  })
+  it('writes a rolling diagnosis with trends', () => {
+    const before = Array.from({ length: 5 }, () => attempt({ ex, selected: [5, 1, 2] }))
+    const now = Array.from({ length: 5 }, () => attempt({ ex, selected: [5, 15, 30] }))
+    const lines = rollingDiagnosis(now, before, map)
+    expect(lines[0]).toMatchObject({ key: 'diag.catchAndFalse', params: { recall: 100, fp: 0, rTrend: ' (+67)' } })
   })
 })

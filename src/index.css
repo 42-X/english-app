@@ -151,6 +151,13 @@ body {
   font-size: 15.5px;
   line-height: 1.85;
 }
+/* Phones: same exam typography, sized for finger taps. */
+@media (pointer: coarse) {
+  .transcript-exam {
+    font-size: 16.5px;
+    line-height: 1.9;
+  }
+}
 
 .word {
   position: relative;

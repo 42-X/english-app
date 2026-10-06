@@ -1,11 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAppState } from '../../app/state'
 import { db } from '../../data/db'
-import { isOnboarded, liveMistakes, markOnboarded, recentAttempts, todaysPlan } from '../../data/repo'
+import { isOnboarded, liveMistakes, markOnboarded, recentAttempts, startOverclickTest, todaysPlan } from '../../data/repo'
 import { requestSync } from '../../data/sync'
-import { speedAdvice } from '../../domain/adaptive'
+import { speedAdvice, targetLevel } from '../../domain/adaptive'
 import { focusCoaching, speedCoaching } from '../../domain/coaching'
 import { estimatedMinutes, localDate } from '../../domain/plan'
 import { isDue } from '../../domain/srs'
@@ -20,7 +20,9 @@ export function HomePage() {
   const { exercises, exerciseById, settings, ready } = useAppState()
   const { t, tk, lang } = useI18n()
   const coach = useCoachText()
+  const navigate = useNavigate()
   const [regen, setRegen] = useState(0)
+  const [testError, setTestError] = useState(false)
   const date = localDate()
 
   const plan = useLiveQuery(async () => {
@@ -41,6 +43,14 @@ export function HomePage() {
   const onboarded = useLiveQuery(() => isOnboarded(), [], true)
   const due = mistakes.filter((m) => isDue(m, Date.now())).length
   const advice = speedAdvice(attempts, settings.speed)
+  const level = targetLevel(attempts)
+
+  const startTest = async () => {
+    const test = await startOverclickTest(exercises)
+    if (!test) return setTestError(true)
+    const first = test.items[0]
+    navigate(`${playLink(first, test)}&flow=test`)
+  }
   const speedLine = speedCoaching(advice)
 
   if (!ready || !plan) return <p className="p-6 text-ink-2">{t('common.loading')}</p>
@@ -53,7 +63,7 @@ export function HomePage() {
     <div className="space-y-4">
       <PageHeader
         title={t('home.title')}
-        sub={`${dateLabel} · ${t('common.minutes', { n: estimatedMinutes(plan, exerciseById) })} · ${doneCount}/${plan.items.length}`}
+        sub={`${dateLabel} · ${t('common.minutes', { n: estimatedMinutes(plan, exerciseById) })} · ${doneCount}/${plan.items.length} · ${t('home.level')}: ${tk(`home.level.${level}`)}`}
         action={
           next ? (
             <ButtonLink variant="primary" className="py-2.5" to={playLink(next, plan)}>
@@ -85,7 +95,14 @@ export function HomePage() {
         </div>
       </Card>
 
-      {!next && <CoachLine tone="good">{t('home.allDone')}</CoachLine>}
+      {!next && (
+        <Card>
+          <CoachLine tone="good">{t('home.allDone')}</CoachLine>
+          <ButtonLink variant="primary" className="mt-3" to={`/report/${plan.id}`}>
+            {t('report.day.open')} →
+          </ButtonLink>
+        </Card>
+      )}
 
       <div className="space-y-3">
         {BLOCKS.map((block) => {
@@ -147,6 +164,14 @@ export function HomePage() {
           </ButtonLink>
         </Card>
       </div>
+
+      <Card title={t('home.testTitle')}>
+        <p className="mb-3 text-sm text-ink-2">{t('home.testDesc')}</p>
+        <Button variant={plan.focus.some((f) => f.type === 'overclicking' || f.type === 'baseline') ? 'primary' : 'secondary'} onClick={() => void startTest()}>
+          {t('home.testStart')} →
+        </Button>
+        {testError && <p className="mt-2 text-sm text-bad">{t('home.testNotEnough')}</p>}
+      </Card>
 
       <Card title={t('home.strategyTitle')}>
         <ol className="list-decimal space-y-1.5 pl-5 text-sm text-ink-2">

@@ -181,7 +181,7 @@ def main():
         n_bad = sum(t["isIncorrect"] for t in tokens)
         print(f"{pid:5} {p['voice']:11} {duration:5.1f}s {len(tokens):3} words {n_bad} mismatches")
     # Keep human-voice items built by build_human_audio.py.
-    library += [e for e in existing.values() if "human-audio" in e.get("tags", [])]
+    library += [e for e in existing.values() if "human-audio" in e.get("tags", []) or e.get("archived")]
     OUT.write_text(json.dumps(library, ensure_ascii=False, separators=(",", ":")))
     print(f"wrote {len(library)} exercises → {OUT.relative_to(ROOT)}")
 

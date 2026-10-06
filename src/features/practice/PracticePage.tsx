@@ -1,14 +1,15 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppState } from '../../app/state'
-import { recentAttempts } from '../../data/repo'
+import { recentAttempts, startOverclickTest } from '../../data/repo'
 import { trapStats } from '../../domain/adaptive'
 import { hasTrap, isHuman } from '../../domain/plan'
+import { playLink } from '../home/HomePage'
 import { TRAP_CATEGORIES, type Attempt, type Exercise, type Mode, type TrapCategory } from '../../domain/types'
 import { useI18n } from '../../i18n'
 import { pct, secs, speedLabel } from '../../ui/format'
-import { Badge, ButtonLink, Card, PageHeader, Segmented } from '../../ui/kit'
+import { Badge, Button, ButtonLink, Card, PageHeader, Segmented } from '../../ui/kit'
 import { effectiveSpeed, MODE_RULES, STRESS_SPEEDS } from '../modes'
 
 const PICKABLE: Mode[] = ['guided', 'fading', 'practice', 'drill', 'recovery', 'overclick', 'exam', 'stress']
@@ -20,6 +21,11 @@ export function PracticePage() {
   const mode = (PICKABLE.includes(params.get('mode') as Mode) ? params.get('mode') : 'practice') as Mode
   const cat = params.get('cat') as TrapCategory | null
   const [stressSpeed, setStressSpeed] = useState<number>(1.1)
+  const navigate = useNavigate()
+  const startTest = async () => {
+    const test = await startOverclickTest(exercises)
+    if (test) navigate(`${playLink(test.items[0], test)}&flow=test`)
+  }
   const attempts = useLiveQuery(() => recentAttempts(), [], [])
 
   const last = useMemo(() => {
@@ -101,7 +107,12 @@ export function PracticePage() {
           </div>
         )}
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          {suggested && (
+          {mode === 'overclick' && (
+            <Button variant="primary" onClick={() => void startTest()}>
+              {t('practice.testCta')} →
+            </Button>
+          )}
+          {suggested && mode !== 'overclick' && (
             <ButtonLink variant="primary" to={link(suggested)}>
               {t('practice.startNext')} →
             </ButtonLink>

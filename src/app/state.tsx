@@ -9,8 +9,9 @@ import type { Exercise, Settings } from '../domain/types'
 interface AppState {
   settings: Settings
   updateSettings: (patch: Partial<Settings>) => Promise<void>
-  /** Built-in library + learner's custom exercises. */
+  /** Practisable exercises: active library + learner's custom ones (archived items excluded). */
   exercises: Exercise[]
+  /** Every exercise, including archived ones, so past attempts can still be opened. */
   exerciseById: Map<string, Exercise>
   libraryError: boolean
   ready: boolean
@@ -44,12 +45,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<AppState>(() => {
-    const exercises = [...(library ?? []), ...custom]
+    const all = [...(library ?? []), ...custom]
     return {
       settings,
       updateSettings,
-      exercises,
-      exerciseById: new Map(exercises.map((e) => [e.id, e])),
+      exercises: all.filter((e) => !e.archived),
+      exerciseById: new Map(all.map((e) => [e.id, e])),
       libraryError,
       ready: library !== null && settingsRow !== undefined,
     }

@@ -185,3 +185,20 @@ export function speedAdvice(recent: readonly Attempt[], currentSpeed: number): S
   }
   return { kind: 'hold', speed: currentSpeed, stats }
 }
+
+/**
+ * Difficulty level for realistic passages: 1 easier (slower/shorter), 2 exam standard, 3 harder.
+ * Drops to 1 while sync or precision is weak; rises to 3 only after 20 stable passages at level ≥ 2.
+ */
+export function targetLevel(recent: readonly Attempt[]): 1 | 2 | 3 {
+  const hiw = recent.filter((a) => isHiwAttempt(a) && a.mode !== 'overclick')
+  const last10 = groupStats(hiw.slice(0, 10))
+  const synced = groupStats(recent.slice(0, 10)).within2
+  if (hiw.length >= 4 && ((synced !== null && synced < 0.75) || (last10.precision !== null && last10.precision < 0.7))) return 1
+  const atStandard = hiw.filter((a) => (a.summary.difficulty ?? 2) >= 2).slice(0, 20)
+  if (atStandard.length >= 20) {
+    const g = groupStats(atStandard)
+    if ((g.precision ?? 0) >= THRESHOLDS.precision && (g.recall ?? 0) >= THRESHOLDS.recall && (g.within2 ?? 0) >= THRESHOLDS.within2) return 3
+  }
+  return 2
+}

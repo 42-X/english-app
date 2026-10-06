@@ -8,6 +8,7 @@ import type { Exercise } from '../domain/types'
 export interface AudioEngine {
   readonly exactTiming: boolean
   load(): Promise<void>
+  setVolume(v: number): void
   /** Unlock playback inside a user gesture (iOS) without audible output. */
   prime(): Promise<void>
   play(): Promise<void>
@@ -17,6 +18,67 @@ export interface AudioEngine {
   currentMs(): number
   onEnded(cb: () => void): void
   destroy(): void
+}
+
+// ── Shared, unlockable audio element ───────────────────────────────────
+//
+// Like the real exam, questions start by themselves after a countdown. Browsers (iOS in particular)
+// only allow that once an audio element has been played inside a user gesture, so one element is
+// shared by every exercise and unlocked by the learner's first tap/click anywhere in the app.
+
+/** 0.1 s of 8 kHz silence. */
+const SILENT_WAV = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=='
+
+let shared: HTMLAudioElement | null = null
+let unlocked = false
+
+function sharedAudio(): HTMLAudioElement {
+  if (!shared) {
+    shared = new Audio()
+    shared.preload = 'auto'
+    shared.preservesPitch = true
+  }
+  return shared
+}
+
+export function isAudioUnlocked(): boolean {
+  return unlocked
+}
+
+/** Call inside a user gesture. Safe to call repeatedly. */
+export function unlockAudio(): void {
+  if (unlocked) return
+  const el = sharedAudio()
+  const hadSrc = el.getAttribute('src')
+  if (!hadSrc) el.src = SILENT_WAV
+  el.muted = true
+  void el
+    .play()
+    .then(() => {
+      el.pause()
+      unlocked = true
+    })
+    .catch((e: unknown) => {
+      // AbortError = the exercise took over the element before this finished; the browser still
+      // accepted playback from the tap, so the element counts as unlocked.
+      if (e instanceof DOMException && e.name === 'AbortError') unlocked = true
+    })
+    .finally(() => {
+      el.muted = false
+      if (!hadSrc) el.removeAttribute('src')
+    })
+  if ('speechSynthesis' in window) speechSynthesis.speak(new SpeechSynthesisUtterance(''))
+}
+
+/** Unlock on the first interaction anywhere in the app. */
+export function installAudioUnlock(): void {
+  const once = () => {
+    unlockAudio()
+    window.removeEventListener('pointerdown', once, true)
+    window.removeEventListener('keydown', once, true)
+  }
+  window.addEventListener('pointerdown', once, true)
+  window.addEventListener('keydown', once, true)
 }
 
 /** Custom exercises keep uploaded audio in IndexedDB under this URL scheme. */
@@ -63,18 +125,22 @@ export function prefetchAudio(urls: string[]): void {
 }
 
 export class RecordedAudioProvider implements AudioEngine {
-  private el = new Audio()
+  private el = sharedAudio()
   private revoke?: () => void
   private endedCb: (() => void) | null = null
+  private onEndedEvent = () => this.endedCb?.()
   readonly exactTiming: boolean
   private url: string
 
   constructor(url: string, exact: boolean) {
     this.url = url
     this.exactTiming = exact
-    this.el.preload = 'auto'
-    this.el.preservesPitch = true
-    this.el.addEventListener('ended', () => this.endedCb?.())
+    this.el.pause()
+    this.el.addEventListener('ended', this.onEndedEvent)
+  }
+
+  setVolume(v: number): void {
+    this.el.volume = Math.max(0, Math.min(1, v))
   }
 
   async load(): Promise<void> {
@@ -132,6 +198,7 @@ export class RecordedAudioProvider implements AudioEngine {
   }
   destroy(): void {
     this.el.pause()
+    this.el.removeEventListener('ended', this.onEndedEvent)
     this.el.removeAttribute('src')
     this.el.load()
     this.revoke?.()
@@ -159,8 +226,14 @@ export class BrowserSpeechProvider implements AudioEngine {
     this.wordStarts = ex.tokens.map((t) => t.startMs)
   }
 
+  private volume = 1
+
   async load(): Promise<void> {
     if (!('speechSynthesis' in window)) throw new Error('no-speech')
+  }
+
+  setVolume(v: number): void {
+    this.volume = v
   }
 
   async prime(): Promise<void> {
@@ -192,6 +265,7 @@ export class BrowserSpeechProvider implements AudioEngine {
     const u = new SpeechSynthesisUtterance(this.text())
     u.lang = this.ex.accent === 'UK' ? 'en-GB' : this.ex.accent === 'AU' ? 'en-AU' : 'en-US'
     u.rate = this.rate
+    u.volume = this.volume
     u.onboundary = (e) => {
       if (e.name && e.name !== 'word') return
       const i = this.charToWord[e.charIndex]
@@ -249,9 +323,12 @@ export async function playSnippet(ex: Exercise, tokenIndex: number, rate: number
   const to = tok.endMs + 1000
 
   if (ex.audioUrl && ex.source !== 'browser-tts') {
+    // Reuse the shared (already unlocked) element: on iOS a fresh element would be blocked
+    // because the fetch below outlives the tap that requested playback.
+    unlockAudio()
     const { src, revoke } = await resolveAudioUrl(ex.audioUrl)
-    const el = new Audio(src)
-    el.preservesPitch = true
+    const el = sharedAudio()
+    el.src = src
     let raf = 0
     const stop = () => {
       cancelAnimationFrame(raf)

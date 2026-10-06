@@ -18,6 +18,11 @@ export interface TranscriptProps {
   /** Tracking active: block page scrolling so a finger can slide over the text. */
   tracking: boolean
   hidden?: boolean
+  /**
+   * Spoken token to keep on screen. Long passages don't fit on a phone and a finger on the text
+   * is tracking (it can't scroll), so the page scrolls itself when the spoken line nears the bottom.
+   */
+  follow?: number | null
   onPointerToken?: (index: number, kind: 'mouse' | 'touch') => void
   onToggle?: (index: number) => void
   /** Optional per-token decoration for results review. */
@@ -37,6 +42,16 @@ export function Transcript(p: TranscriptProps) {
   const root = useRef<HTMLDivElement>(null)
   const down = useRef<{ x: number; y: number; t: number; i: number | null; type: string; moved: boolean } | null>(null)
   const [lineTop, setLineTop] = useState<number | null>(null)
+
+  useLayoutEffect(() => {
+    if (p.follow === null || p.follow === undefined || !root.current) return
+    const el = root.current.querySelector<HTMLElement>(`[data-i="${p.follow}"]`)
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const margin = window.innerHeight * 0.22
+    if (r.bottom > window.innerHeight - margin) window.scrollBy({ top: r.top - window.innerHeight * 0.4, behavior: 'smooth' })
+    else if (r.top < 60) window.scrollBy({ top: r.top - window.innerHeight * 0.3, behavior: 'smooth' })
+  }, [p.follow])
 
   useLayoutEffect(() => {
     if (p.lineCue === null || p.lineCue === undefined || !root.current) return setLineTop(null)

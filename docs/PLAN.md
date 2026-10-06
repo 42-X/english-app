@@ -127,15 +127,21 @@ This app trains HIW only.
 ## Roadmap
 
 ### P0 — before sending to her
+
+Learner feedback (2026-10-06): passages felt shorter than the real exam; Start button far from the
+passage; no "Beginning in N seconds" before the audio. → All HIW items rebuilt at exam length
+(85–125 words, 32–50 s); exam-style status box above the passage with a 7 s countdown and automatic
+start in every mode; Next directly under the passage; volume control; phone auto-scroll.
+
 - [ ] **Content volume**: ≥120 human-voice items (74 unused candidates + more articles), ≥6 drills per trap category incl. function words, prepositions, connected speech; ≥12 over-click passages
-- [ ] **Automated clip check**: re-transcribe every cut clip and confirm words + timings match the tokens (catches bad cuts/alignment without needing ears)
-- [ ] **Over-clicking diagnostic test**: 10-passage session, count hidden, aggregate report (unnecessary clicks, net impact, confidence pattern) + verdict "decision threshold vs discrimination"
-- [ ] **Tracking checks**: in guided/fading, occasional "tap the word you just heard" prompts; sync accuracy reported
-- [ ] **Session summary** at the end of the daily plan: what improved, what cost the most points, tomorrow's focus
-- [ ] **Rolling written diagnosis** on Progress (zh-TW/en), with change vs previous period
-- [ ] **Difficulty progression**: use `difficulty` + passage length; shorter passages when sync is weak, harder/longer after ≥90% precision over 20
-- [ ] 0.8× / 0.9× practice speeds (learning modes only)
-- [ ] Consecutive-error sync-loss flag; FP rate by confidence; sync-loss rate on dashboard
+- [x] **Automated clip check**: re-transcribe every cut clip and confirm words + timings match the tokens (catches bad cuts/alignment without needing ears)
+- [x] **Over-clicking diagnostic test**: 10-passage session, count hidden, aggregate report (unnecessary clicks, net impact, confidence pattern) + verdict "decision threshold vs discrimination"
+- [x] **Tracking checks**: in guided/fading, occasional "tap the word you just heard" prompts; sync accuracy reported
+- [x] **Session summary** at the end of the daily plan: what improved, what cost the most points, tomorrow's focus
+- [x] **Rolling written diagnosis** on Progress (zh-TW/en), with change vs previous period
+- [x] **Difficulty progression**: use `difficulty` + passage length; shorter passages when sync is weak, harder/longer after ≥90% precision over 20
+- [x] 0.8× / 0.9× practice speeds
+- [x] Consecutive-error sync-loss flag; false clicks by confidence; sync-loss rate on dashboard
 - [ ] Accent labels for human recordings where the reader's accent can be determined
 - [ ] Real-phone test (iPhone Safari + installed app): audio start, finger tracking, update applies
 

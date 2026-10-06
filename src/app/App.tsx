@@ -8,6 +8,7 @@ import { MistakesPage } from '../features/mistakes/MistakesPage'
 import { PlayerPage } from '../features/player/PlayerPage'
 import { PracticePage } from '../features/practice/PracticePage'
 import { ProgressPage } from '../features/progress/ProgressPage'
+import { ReportPage } from '../features/report/ReportPage'
 import { ResultsPage } from '../features/results/ResultsPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
 import { I18nProvider, useI18n, type StringKey } from '../i18n'
@@ -44,6 +45,7 @@ function Localized() {
             <Route index element={<HomePage />} />
             <Route path="/practice" element={<PracticePage />} />
             <Route path="/results/:id" element={<ResultsPage />} />
+            <Route path="/report/:id" element={<ReportPage />} />
             <Route path="/mistakes" element={<MistakesPage />} />
             <Route path="/progress" element={<ProgressPage />} />
             <Route path="/create" element={<CreatePage />} />

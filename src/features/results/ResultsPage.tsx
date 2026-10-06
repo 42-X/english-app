@@ -117,6 +117,18 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
         ) : (
           <p className="text-sm text-ink-2">{t('coach.noTracking')}</p>
         )}
+        {attempt.checks && attempt.checks.length > 0 && (
+          <p className="mt-3 text-sm text-ink-2">
+            {t('results.checks', {
+              ok: attempt.checks.filter((c) => c.answer !== null && Math.abs(c.answer - c.spoken) <= 1).length,
+              total: attempt.checks.length,
+              off: (() => {
+                const answered = attempt.checks.filter((c) => c.answer !== null)
+                return answered.length ? (answered.reduce((n, c) => n + Math.abs((c.answer as number) - c.spoken), 0) / answered.length).toFixed(1) : '—'
+              })(),
+            })}
+          </p>
+        )}
         {attempt.blackouts.length > 0 && (
           <p className="mt-3 text-sm text-ink-2">
             {t('results.blackouts', { list: recoveries.map((r) => (r === null ? t('results.notRecovered') : secs(r))).join(' · ') })}
@@ -242,6 +254,11 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
             {t('results.nextInPlan')} →
           </ButtonLink>
         ) : null}
+        {plan && !nextItem && (
+          <ButtonLink variant="primary" to={`/report/${plan.id}`}>
+            {t('report.day.open')} →
+          </ButtonLink>
+        )}
         {plan && <ButtonLink to="/">{t('results.backToPlan')}</ButtonLink>}
         <ButtonLink to={`/play/${ex.id}?mode=${attempt.mode}&speed=${attempt.speed}`} replace>
           {t('results.retry')}

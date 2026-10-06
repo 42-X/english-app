@@ -28,7 +28,8 @@ export type ExerciseKind = 'guided' | 'easy' | 'realistic' | 'drill' | 'overclic
 export const MODES = ['guided', 'fading', 'practice', 'drill', 'recovery', 'overclick', 'exam', 'stress', 'review'] as const
 export type Mode = (typeof MODES)[number]
 
-export const SPEEDS = [1, 1.05, 1.1, 1.15, 1.2, 1.3] as const
+/** Practice speeds. 0.8–0.9× are learning aids; the exam itself is 1.0×. */
+export const SPEEDS = [0.8, 0.9, 1, 1.05, 1.1, 1.15, 1.2, 1.3] as const
 export type Speed = (typeof SPEEDS)[number]
 
 export type Accent = 'US' | 'UK' | 'AU' | 'IN' | 'CA' | 'other'
@@ -72,6 +73,8 @@ export interface Exercise {
   credit?: { work: string; author: string; license: string; url?: string; note?: string }
   /** True for learner-created exercises. */
   custom?: boolean
+  /** Kept only so past attempts still open; never offered for practice. */
+  archived?: boolean
   createdAt?: number
   updatedAt?: number
 }
@@ -93,6 +96,18 @@ export interface Interaction {
   spoken: number
 }
 
+/** Tracking check: "tap the word you just heard" prompt during guided/fading playback. */
+export interface TrackingCheck {
+  /** Media time the prompt appeared. */
+  t: number
+  /** Spoken token index at the prompt. */
+  spoken: number
+  /** Token the learner tapped, or null if no answer in time. */
+  answer: number | null
+  /** Wall-clock ms from prompt to answer. */
+  responseMs: number | null
+}
+
 export type Confidence = 'high' | 'medium' | 'guess'
 
 export interface Attempt {
@@ -109,6 +124,7 @@ export interface Attempt {
   samples: TrackingSample[]
   /** Media times of recovery-training blackouts [start, end]. */
   blackouts: [number, number][]
+  checks?: TrackingCheck[]
   confidence: Record<number, Confidence>
   planId?: string
   /** Denormalised summary so lists/dashboards don't recompute. */
@@ -157,6 +173,8 @@ export interface AttemptSummary {
   trapTotals: Partial<Record<TrapCategory, number>>
   accent: Accent
   kind: ExerciseKind
+  /** Exercise difficulty at the time (1 easier · 2 exam standard · 3 harder). Missing on old attempts. */
+  difficulty?: number
 }
 
 export interface MistakeItem {
@@ -188,6 +206,8 @@ export interface PlanItem {
 
 export interface DailyPlan {
   id: string
+  /** 'daily' plan (default) or a diagnostic test session. */
+  kind?: 'daily' | 'overclick-test'
   date: string
   focus: Focus[]
   items: PlanItem[]
@@ -216,6 +236,7 @@ export interface Settings {
   speed: number
   fading: FadingConfig
   liveCoaching: boolean
-  examCountdownSec: number
+  /** "Beginning in N seconds" before every recording, like the exam. */
+  countdownSec: number
   updatedAt: number
 }

@@ -4,6 +4,7 @@ import { useAppState } from '../../app/state'
 import { recentAttempts } from '../../data/repo'
 import { groupBy, groupStats, isHiwAttempt, speedAdvice, THRESHOLDS, trapStats, type GroupStats } from '../../domain/adaptive'
 import { speedCoaching } from '../../domain/coaching'
+import { rollingDiagnosis } from '../../domain/report'
 import type { Attempt, Confidence } from '../../domain/types'
 import { useCoachText, useI18n } from '../../i18n'
 import { pct, secs, signed, speedLabel } from '../../ui/format'
@@ -15,10 +16,11 @@ const WINDOWS = [10, 25, 50] as const
 export function ProgressPage() {
   const { t, tk } = useI18n()
   const coach = useCoachText()
-  const { settings } = useAppState()
+  const { settings, exerciseById } = useAppState()
   const [win, setWin] = useState<(typeof WINDOWS)[number]>(10)
   const all = useLiveQuery(() => recentAttempts(), [], [])
   const recent = all.slice(0, win)
+  const previousWindow = all.slice(win, win * 2)
   const hiw = recent.filter(isHiwAttempt)
   const g = groupStats(hiw)
   const tracked = groupStats(recent)
@@ -53,6 +55,7 @@ export function ProgressPage() {
   }
 
   const traps = trapStats(hiw)
+  const diagnosis = rollingDiagnosis(recent, previousWindow, exerciseById)
   const advice = speedCoaching(speedAdvice(all, settings.speed))
   const at1 = all.filter((a) => isHiwAttempt(a) && a.speed === 1 && a.mode !== 'overclick').slice(0, 20)
   const r1 = groupStats(at1)
@@ -65,6 +68,19 @@ export function ProgressPage() {
         action={<Segmented value={win} onChange={setWin} options={WINDOWS.map((n) => ({ value: n, label: t('progress.last', { n }) }))} />}
       />
 
+      {diagnosis.length > 0 && (
+        <Card title={t('diag.title')}>
+          <div className="space-y-2">
+            {diagnosis.map((l, i) => (
+              <CoachLine key={i} tone={l.tone}>
+                {coach(l.key, l.params)}
+              </CoachLine>
+            ))}
+          </div>
+          {previousWindow.length > 0 && <p className="mt-2 text-xs text-ink-3">{t('diag.trendNote')}</p>}
+        </Card>
+      )}
+
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat label={t('progress.avgNet')} value={g.n ? g.avgNet.toFixed(1) : '—'} />
         <Stat label={t('progress.precision')} value={pct(g.precision)} tone={tone(g.precision, THRESHOLDS.precision)} sub={t('progress.target', { v: pct(THRESHOLDS.precision) })} />
@@ -74,6 +90,7 @@ export function ProgressPage() {
         <Stat label={t('progress.lag')} value={signed(tracked.avgLag)} />
         <Stat label={t('progress.recovery')} value={secs(tracked.avgRecoveryMs)} />
         <Stat label={t('progress.latency')} value={secs(g.avgLatencyMs)} />
+        <Stat label={t('progress.lossRate')} value={tracked.n ? tracked.lossEventsPerAttempt.toFixed(1) : '—'} tone={tracked.lossEventsPerAttempt > 1 ? 'warn' : undefined} />
       </div>
 
       {recent.length >= 2 && (
@@ -202,7 +219,7 @@ function BreakdownTable({ head, rows }: { head: string; rows: [string, GroupStat
 function ConfidenceCard({ attempts }: { attempts: Attempt[] }) {
   const { t } = useI18n()
   const { exerciseById } = useAppState()
-  const stats = new Map<Confidence, { hits: number; total: number }>()
+  const stats = new Map<Confidence, { hits: number; total: number }>() // total labelled, hits = real mismatches
   for (const a of attempts) {
     const ex = exerciseById.get(a.exerciseId)
     if (!ex) continue
@@ -219,7 +236,15 @@ function ConfidenceCard({ attempts }: { attempts: Attempt[] }) {
       <div className="grid grid-cols-3 gap-2">
         {(['high', 'medium', 'guess'] as const).map((c) => {
           const s = stats.get(c)
-          return <Stat key={c} label={t(`results.conf.${c}`)} value={s ? pct(s.hits / s.total) : '—'} sub={s ? `n=${s.total}` : undefined} />
+          return (
+            <Stat
+              key={c}
+              label={t(`results.conf.${c}`)}
+              value={s ? pct(s.hits / s.total) : '—'}
+              sub={s ? `n=${s.total} · ${t('progress.fpByConf', { n: s.total - s.hits })}` : undefined}
+              tone={s && s.total - s.hits > s.hits ? 'bad' : undefined}
+            />
+          )
         })}
       </div>
     </Card>

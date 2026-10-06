@@ -7,6 +7,9 @@ Stage 1 — candidates:
   and writes content/human/candidates.json: clean 18–45 s excerpts (sentence-aligned,
   high-confidence words only, spoken intro skipped).
 
+  Re-run the excerpt picker on cached transcripts (no download / transcription):
+    .venv-tts/bin/python scripts/build_human_audio.py rewindow
+
 Stage 2 — build:
     .venv-tts/bin/python scripts/build_human_audio.py build
   Reads content/human/items.json (hand-written substitutions per excerpt), cuts the audio to
@@ -35,6 +38,8 @@ ROOT = Path(__file__).resolve().parent.parent
 HUMAN = ROOT / "content" / "human"
 CACHE = ROOT / ".cache" / "spoken"
 CANDIDATES = HUMAN / "candidates.json"
+# Exam-length excerpts (rewindow output, build input). Kept separate from fetch's working file.
+EXAM_CANDIDATES = HUMAN / "candidates-exam.json"
 ITEMS = HUMAN / "items.json"
 LIBRARY = ROOT / "public" / "content" / "library.json"
 AUDIO_DIR = ROOT / "public" / "audio"
@@ -59,6 +64,20 @@ ARTICLES = [
     "Natural history museum", "Investigative journalism", "Universal suffrage", "Habeas corpus", "Waterfall",
     "Antarctica", "Geography and ecology of the Everglades", "Fauna of Australia", "Tasmanian devil",
     "Iberian lynx", "Columbian mammoth", "Triceratops", "Theia (hypothetical planet)", "Space elevator",
+    # Second batch: more academic topics so the library doesn't repeat within weeks.
+    "Arctic tern", "American goldfinch", "Bobcat", "Cougar", "Eurasian beaver", "Orca", "Fin whale", "Tawny owl",
+    "Poison dart frog", "Australian green tree frog", "Jaguar", "Island fox", "Cattle egret", "Black vulture",
+    "Dusky dolphin", "Deinosuchus", "Climate", "Caesium", "Plutonium", "Yttrium", "Zinc", "Silver",
+    "Hydrochloric acid", "Amethyst", "Joule", "Watt", "Arithmetic", "Parity of zero", "Pigeonhole principle",
+    "Paradox", "Thought", "Connectionism", "Limerence", "Envy", "Hypochondria", "Asperger syndrome", "Disability",
+    "Visual impairment", "Fluoxetine", "Fentanyl", "Balance disorder", "Vertigo", "Peyer's patch",
+    "Behavioral neuroscience", "Quantum optics", "Fermion", "Titan (moon)", "Iapetus (moon)", "Mimas",
+    "Comet Shoemaker–Levy 9", "Colonization of Mars", "Technological singularity", "Transhumanism",
+    "Peter principle", "Ubuntu philosophy", "Politics and the English Language", "Split infinitive", "Synecdoche",
+    "Gemination", "Roman dodecahedron", "Tower of London", "Sinking of the Titanic", "Andrée's Arctic balloon expedition",
+    "Four-minute mile", "Daylight saving time", "Clock", "Bicycle", "Submarine", "Search engine optimization",
+    "Markup language", "HTTP cookie", "Read-only memory", "Digital audio", "Microwave transmission", "Folding@home",
+    "Silo", "Gas reinjection", "Monument to the Great Fire of London", "History of pizza", "Coffee",
 ]
 
 INTRO_WORDS = re.compile(r"wikipedia|recording|recorded|licen[cs]e|creative commons|spoken|revision|article", re.I)
@@ -92,7 +111,7 @@ def find_recording(title: str):
     }
 
 
-def download_head(url: str, dest: Path, nbytes: int = 5_000_000) -> None:
+def download_head(url: str, dest: Path, nbytes: int = 6_000_000) -> None:
     if dest.exists():
         return
     req = urllib.request.Request(url, headers={**UA, "Range": f"bytes=0-{nbytes - 1}"})
@@ -151,14 +170,14 @@ def _transcribe(src: str):
     from faster_whisper import WhisperModel
 
     if _model is None:
-        _model = WhisperModel("small.en", device="cpu", compute_type="int8", cpu_threads=5)
-    cached = Path(src).with_suffix(".words.json")
+        _model = WhisperModel("small.en", device="cpu", compute_type="int8", cpu_threads=4)
+    cached = Path(src).with_suffix(".words360.json")
     if cached.exists():
         return src, json.loads(cached.read_text())
     pcm = decode(Path(src), 16_000)
     if len(pcm) < 16_000 * 60:
         return src, None
-    segs, _ = _model.transcribe(pcm[: 16_000 * 150], language="en", word_timestamps=True, beam_size=2, condition_on_previous_text=False)
+    segs, _ = _model.transcribe(pcm[: 16_000 * 240], language="en", word_timestamps=True, beam_size=1, condition_on_previous_text=False)
     words = [
         {"w": w.word.strip(), "s": round(w.start, 3), "e": round(w.end, 3), "p": round(w.probability, 3)}
         for s in segs
@@ -186,14 +205,14 @@ def fetch():
             else:
                 prepared[str(info["src"])] = (title, info)
 
-    with Pool(3) as pool:
+    with Pool(4) as pool:
         for src, words in pool.imap_unordered(_transcribe, list(prepared)):
             title, info = prepared[src]
             if not words:
                 print(f"skip {title}: too short", flush=True)
                 continue
             found = windows(words)
-            for k, win in enumerate(found[:3]):
+            for k, win in enumerate(found[:4]):
                 candidates.append({"key": f"{info['slug']}#{k + 1}", "article": title, "source": info["rec"], "cache": Path(src).name, **win})
             print(f"{title}: {len(words)} words → {len(found)} windows", flush=True)
             CANDIDATES.write_text(json.dumps(candidates, ensure_ascii=False, indent=1))
@@ -214,8 +233,13 @@ def merge_fragments(words: list[dict]) -> list[dict]:
     return out
 
 
+# Real HIW recordings run up to ~50 s; practice items match that so training transfers.
+MIN_WORDS, MAX_WORDS = 85, 125
+MIN_SECONDS, MAX_SECONDS = 32, 50
+
+
 def windows(words: list[dict]) -> list[dict]:
-    """Sentence-aligned excerpts of 50–95 words / 18–45 s. Low-confidence words are flagged for review."""
+    """Sentence-aligned exam-length excerpts. Low-confidence words are flagged for review."""
     words = merge_fragments(words)
     # Skip the spoken intro ("This is a recording of the Wikipedia article ...").
     start = 0
@@ -230,11 +254,11 @@ def windows(words: list[dict]) -> list[dict]:
         if i <= used_until:
             continue
         best = None
-        for j in range(i + 49, min(len(words), i + 96)):
+        for j in range(i + MIN_WORDS - 1, min(len(words), i + MAX_WORDS)):
             if not words[j]["w"].endswith((".", "?", "!")):
                 continue
             dur = words[j]["e"] - words[i]["s"]
-            if 18 <= dur <= 45:
+            if MIN_SECONDS <= dur <= MAX_SECONDS:
                 best = j
         if best is None:
             continue
@@ -242,7 +266,7 @@ def windows(words: list[dict]) -> list[dict]:
         text = " ".join(w["w"] for w in span)
         gaps = [span[k + 1]["s"] - span[k]["e"] for k in range(len(span) - 1)]
         low = [k for k, w in enumerate(span) if w["p"] < 0.6]
-        if len(low) > 3 or min(w["p"] for w in span) < 0.3 or BAD_TEXT.search(text) or INTRO_WORDS.search(text) or max(gaps) > 2.5:
+        if len(low) > 4 or min(w["p"] for w in span) < 0.3 or BAD_TEXT.search(text) or INTRO_WORDS.search(text) or max(gaps) > 2.5:
             continue
         out.append({"start": span[0]["s"], "end": span[-1]["e"], "words": span, "text": text, "lowConfidence": low})
         used_until = best
@@ -276,9 +300,12 @@ def to_mp3(pcm: np.ndarray, rate: int) -> bytes:
 
 
 def build():
-    cands = {c["key"]: c for c in json.loads(CANDIDATES.read_text())}
+    cands = {c["key"]: c for c in json.loads(EXAM_CANDIDATES.read_text())}
     items = json.loads(ITEMS.read_text())
-    library = [e for e in json.loads(LIBRARY.read_text()) if "human-audio" not in e.get("tags", [])]
+    new_ids = {it["id"] for it in items}
+    # Older items (short human excerpts, synthetic passages) stay resolvable for past attempts
+    # but are archived: never offered for practice again.
+    library = [{**e, "archived": True} for e in json.loads(LIBRARY.read_text()) if e["id"] not in new_ids]
     rate = 44_100
     pcm_cache: dict[str, np.ndarray] = {}
     for it in items:
@@ -331,6 +358,10 @@ def build():
                     "trailing": trail,
                 }
             )
+        words_n = len(tokens)
+        wpm = words_n / max(1.0, (c["end"] - c["start"]) / 60)
+        # 1 easier (slower/shorter) · 2 exam standard · 3 harder (fast or long)
+        auto_level = 1 if wpm < 140 and words_n < 100 else 3 if wpm >= 170 or words_n >= 118 else 2
         src = dict(c["source"])
         artist = re.sub(r"^(Speaker:|The original uploader was)\s*", "", src["artist"]).split("\n")[0].strip()
         src["artist"] = re.sub(r"\s+at English Wikipedia.*$", "", artist) or "Wikimedia contributor"
@@ -340,7 +371,7 @@ def build():
                 "title": it.get("title") or c["article"],
                 "topic": it.get("topic", "general"),
                 "kind": it.get("kind", "realistic"),
-                "difficulty": it.get("difficulty", 2),
+                "difficulty": it.get("difficulty", auto_level),
                 "source": "recorded",
                 "audioUrl": f"/audio/{it['id']}.mp3",
                 "durationMs": round((t1 - t0) * 1000),
@@ -371,5 +402,74 @@ def build():
     print(f"library: {len(library)} exercises")
 
 
+def rewindow():
+    """Recompute candidates from cached transcripts with the current window settings."""
+    import time
+
+    old = {c["article"]: c for c in json.loads(CANDIDATES.read_text())} if CANDIDATES.exists() else {}
+    by_slug = {re.sub(r"\W+", "_", t).strip("_"): t for t in ARTICLES}
+    sources = {}
+    for f in sorted(CACHE.glob("*.words360.json")):
+        slug = f.name.split(".")[0]
+        cache = next((p.name for p in CACHE.glob(f"{slug}.*") if not p.name.endswith(".json")), None)
+        meta_file = CACHE / f"{slug}.meta.json"
+        meta = next((c for c in old.values() if c["cache"].split(".")[0] == slug), None)
+        if meta:
+            sources[slug] = (meta["article"], meta["source"], meta["cache"], f)
+        elif meta_file.exists():
+            m = json.loads(meta_file.read_text())
+            sources[slug] = (m["article"], m["source"], cache, f)
+        elif slug in by_slug and cache:
+            time.sleep(1.5)  # polite: one metadata lookup at a time
+            rec = find_recording(by_slug[slug])
+            if rec:
+                meta_file.write_text(json.dumps({"article": by_slug[slug], "source": rec}))
+                sources[slug] = (by_slug[slug], rec, cache, f)
+    out = []
+    for slug, (article, source, cache, f) in sources.items():
+        found = windows(json.loads(f.read_text()))
+        for k, win in enumerate(found[:4]):
+            out.append({"key": f"{slug}#{k + 1}", "article": article, "source": source, "cache": cache, **win})
+    EXAM_CANDIDATES.write_text(json.dumps(out, ensure_ascii=False, indent=1))
+    print(f"{len(out)} candidates from {len({c['article'] for c in out})} articles")
+
+
+def verify():
+    """Re-transcribe every built clip and compare with its tokens (catches bad cuts or misalignment)."""
+    from faster_whisper import WhisperModel
+
+    model = WhisperModel("small.en", device="cpu", compute_type="int8", cpu_threads=16)
+    lib = [e for e in json.loads(LIBRARY.read_text()) if "human-audio" in e.get("tags", [])]
+    norm = lambda w: re.sub(r"[^a-z0-9]", "", w.lower())
+    report = []
+    for e in lib:
+        pcm = decode(AUDIO_DIR / f"{e['id']}.mp3", 16_000)
+        segs, _ = model.transcribe(pcm, language="en", word_timestamps=True, beam_size=2, condition_on_previous_text=False)
+        heard = [(norm(w.word), w.start * 1000) for s in segs for w in (s.words or []) if norm(w.word)]
+        expected = [(norm(t["spokenText"]), t["startMs"]) for t in e["tokens"]]
+        # Greedy alignment: walk both sequences, allowing small skips.
+        i = j = matched = 0
+        offsets = []
+        while i < len(expected) and j < len(heard):
+            if expected[i][0] == heard[j][0]:
+                matched += 1
+                offsets.append(abs(expected[i][1] - heard[j][1]))
+                i += 1
+                j += 1
+            elif j + 1 < len(heard) and expected[i][0] == heard[j + 1][0]:
+                j += 1
+            else:
+                i += 1
+        offsets.sort()
+        med = offsets[len(offsets) // 2] if offsets else 9999
+        rate = matched / max(1, len(expected))
+        ok = rate >= 0.9 and med <= 250
+        report.append({"id": e["id"], "match": round(rate, 3), "medianOffsetMs": round(med), "ok": ok})
+        print(f"{e['id']:5} match {rate:5.1%} median offset {med:4.0f} ms {'OK' if ok else 'CHECK'}", flush=True)
+    (HUMAN / "verify.json").write_text(json.dumps(report, indent=1))
+    bad = [r["id"] for r in report if not r["ok"]]
+    print(f"{len(report) - len(bad)}/{len(report)} clips verified; needs attention: {bad}")
+
+
 if __name__ == "__main__":
-    {"fetch": fetch, "build": build}[sys.argv[1]]()
+    {"fetch": fetch, "rewindow": rewindow, "build": build, "verify": verify}[sys.argv[1]]()

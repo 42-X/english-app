@@ -103,7 +103,7 @@ export function SettingsPage() {
             />
           </Row>
           <Row label={t('settings.countdown')}>
-            <Segmented value={settings.examCountdownSec} onChange={(v) => void updateSettings({ examCountdownSec: v })} options={[3, 7, 10].map((s) => ({ value: s, label: `${s}` }))} />
+            <Segmented value={settings.countdownSec} onChange={(v) => void updateSettings({ countdownSec: v })} options={[3, 7, 10].map((s) => ({ value: s, label: `${s}` }))} />
           </Row>
         </div>
       </Card>

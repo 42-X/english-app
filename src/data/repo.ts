@@ -1,6 +1,6 @@
 import { isHiwAttempt } from '../domain/adaptive'
 import { contextAround, falsePositiveRows } from '../domain/analysis'
-import { buildDailyPlan, hasTrap, localDate } from '../domain/plan'
+import { buildDailyPlan, buildOverclickTest, hasTrap, localDate } from '../domain/plan'
 import { isDue, recordMistake, reviewMistake } from '../domain/srs'
 import type { Attempt, DailyPlan, Exercise, MistakeItem, Settings } from '../domain/types'
 import { db, getMeta, setMeta, type AttemptRow } from './db'
@@ -11,7 +11,7 @@ export const DEFAULT_SETTINGS: Settings = {
   speed: 1,
   fading: { full: 0.3, line: 0.3 },
   liveCoaching: true,
-  examCountdownSec: 10,
+  countdownSec: 7,
   updatedAt: 0,
 }
 
@@ -117,6 +117,20 @@ export async function todaysPlan(exercises: readonly Exercise[], speed: number, 
   })
   await db.plans.put({ ...plan, dirty: 1 })
   return plan
+}
+
+/** Create a 10-passage over-clicking diagnostic session; returns its id (null if not enough content). */
+export async function startOverclickTest(exercises: readonly Exercise[]): Promise<DailyPlan | null> {
+  const test = buildOverclickTest({ date: localDate(), exercises, attempts: await recentAttempts(200), now: Date.now() })
+  if (test) await db.plans.put({ ...test, dirty: 1 })
+  return test
+}
+
+/** Attempts belonging to a plan/test session, in play order. */
+export async function sessionAttempts(plan: DailyPlan): Promise<Attempt[]> {
+  const ids = plan.items.map((i) => i.attemptId).filter((x): x is string => !!x)
+  const rows = await db.attempts.bulkGet(ids)
+  return rows.filter((a): a is AttemptRow => !!a && !a.deleted)
 }
 
 // ── Backup ──────────────────────────────────────────────────────────

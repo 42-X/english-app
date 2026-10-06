@@ -69,6 +69,18 @@ function wordMid(tok: Token): number {
 }
 
 export function mismatchRows(ex: Exercise, a: Pick<Attempt, 'selected' | 'interactions' | 'samples' | 'speed'>): MismatchRow[] {
+  const rows = rawMismatchRows(ex, a)
+  // Several misses in a row with no pointer data usually means she had lost her place.
+  rows.forEach((r, i) => {
+    const prev = rows[i - 1]
+    const next = rows[i + 1]
+    const streak = (prev && !prev.selected) || (next && !next.selected)
+    if (!r.selected && r.state === 'untracked' && streak && !r.causes.includes('lost-sync')) r.causes.unshift('lost-sync')
+  })
+  return rows
+}
+
+function rawMismatchRows(ex: Exercise, a: Pick<Attempt, 'selected' | 'interactions' | 'samples' | 'speed'>): MismatchRow[] {
   const sel = new Set(a.selected)
   return ex.tokens
     .filter((t) => t.isIncorrect)
@@ -140,6 +152,7 @@ export function summarize(ex: Exercise, a: { selected: number[]; interactions: I
     trapTotals,
     accent: ex.accent,
     kind: ex.kind,
+    difficulty: ex.difficulty,
   }
 }
 
