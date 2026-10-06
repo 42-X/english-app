@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppState } from '../../app/state'
 import { db } from '../../data/db'
-import { extendPlan, isOnboarded, liveMistakes, liveVocab, markOnboarded, recentAttempts, startOverclickTest, todaysPlan } from '../../data/repo'
+import { addListeningToPlan, extendPlan, isOnboarded, liveMistakes, liveVocab, markOnboarded, recentAttempts, startOverclickTest, todaysPlan } from '../../data/repo'
 import { requestSync } from '../../data/sync'
 import { isHiwAttempt, speedAdvice, targetLevel, weaknesses } from '../../domain/adaptive'
 import { focusCoaching, speedCoaching } from '../../domain/coaching'
@@ -14,7 +14,7 @@ import { useCoachText, useI18n } from '../../i18n'
 import { speedLabel } from '../../ui/format'
 import { Button, ButtonLink, Card, CoachLine, PageHeader } from '../../ui/kit'
 
-const BLOCKS: PlanItem['block'][] = ['warmup', 'drill', 'realistic', 'review']
+const BLOCKS: PlanItem['block'][] = ['warmup', 'drill', 'realistic', 'fibl', 'wfd', 'review']
 /** Scored questions needed before the personal focus appears (mirrors `weaknesses`). */
 const BASELINE = 3
 
@@ -39,6 +39,13 @@ export function HomePage() {
       if (regen > 0) setRegen(0)
     }
   }, [ready, plan, regen, exercises, settings.speed])
+
+  // Plans created before FIB-L/WFD existed get those items added once.
+  useEffect(() => {
+    if (ready && plan && plan.kind !== 'overclick-test' && !plan.items.some((i) => i.task === 'fibl' || i.task === 'wfd')) {
+      void addListeningToPlan(plan.id, exercises).then(requestSync)
+    }
+  }, [ready, plan, exercises])
 
   const attempts = useLiveQuery(() => recentAttempts(60), [], [])
   const mistakes = useLiveQuery(() => liveMistakes(), [], [])
@@ -94,7 +101,8 @@ export function HomePage() {
             <div className="min-w-0">
               <div className="text-xs text-ink-3">{t('home.upNext', { n: plan.items.indexOf(next) + 1 })}</div>
               <div className="truncate font-medium text-ink">
-                {nextEx?.title} · <span className="text-ink-2">{tk(`mode.${next.mode}`)}</span>
+                {next.task === 'wfd' ? t('wfd.setTitle', { n: next.sentences?.length ?? 0 }) : nextEx?.title} ·{' '}
+                <span className="text-ink-2">{next.task === 'fibl' ? 'Fill in the Blanks' : next.task === 'wfd' ? 'Write From Dictation' : tk(`mode.${next.mode}`)}</span>
               </div>
             </div>
             <ButtonLink variant="primary" className="py-2.5" to={playLink(next, plan)}>
@@ -154,15 +162,17 @@ export function HomePage() {
                         {item.attemptId ? '✓' : plan.items.indexOf(item) + 1}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium text-ink">{ex?.title ?? item.exerciseId}</div>
+                        <div className="truncate text-sm font-medium text-ink">
+                          {item.task === 'wfd' ? t('wfd.setTitle', { n: item.sentences?.length ?? 0 }) : (ex?.title ?? item.exerciseId)}
+                        </div>
                         <div className="flex flex-wrap items-center gap-1.5 text-xs text-ink-3">
-                          <span>{tk(`mode.${item.mode}`)}</span>
-                          <span>· {speedLabel(item.speed)}</span>
+                          <span>{item.task === 'fibl' ? 'Fill in the Blanks' : item.task === 'wfd' ? 'Write From Dictation' : tk(`mode.${item.mode}`)}</span>
+                          {!item.task && <span>· {speedLabel(item.speed)}</span>}
                           <span>· {reasonText(item.reason, tk)}</span>
                         </div>
                       </div>
                       {item.attemptId ? (
-                        <Link className="text-xs text-accent hover:underline" to={`/results/${item.attemptId}`}>
+                        <Link className="text-xs text-accent hover:underline" to={resultLink(item)}>
                           {t('results.title')}
                         </Link>
                       ) : (
@@ -233,7 +243,14 @@ export function HomePage() {
 }
 
 export function playLink(item: PlanItem, plan: DailyPlan): string {
+  if (item.task === 'fibl') return `/fibl/${item.exerciseId}?mode=${item.mode === 'exam' ? 'exam' : 'practice'}&plan=${plan.id}`
+  if (item.task === 'wfd') return `/wfd?mode=${item.mode === 'exam' ? 'exam' : 'practice'}&plan=${plan.id}`
   return `/play/${item.exerciseId}?mode=${item.mode}&speed=${item.speed}&plan=${plan.id}`
+}
+
+/** Where a finished plan item's results live. */
+export function resultLink(item: PlanItem): string {
+  return item.task === 'fibl' || item.task === 'wfd' ? `/listening/${item.attemptId}` : `/results/${item.attemptId}`
 }
 
 export function reasonText(reason: string, tk: (k: string, p?: Record<string, string | number>) => string): string {

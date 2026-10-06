@@ -1,5 +1,6 @@
 import { targetLevel, weaknesses } from './adaptive'
 import { isDue } from './srs'
+import type { WfdSentence } from './listening'
 import type { Attempt, DailyPlan, Exercise, Focus, MistakeItem, Mode, PlanItem, TrapCategory } from './types'
 
 export interface PlanInput {
@@ -10,7 +11,19 @@ export interface PlanInput {
   mistakes: readonly MistakeItem[]
   speed: number
   now: number
+  /** FIB-L / WFD history; when given, the plan includes those tasks. */
+  listening?: {
+    /** Last FIB-L attempt time per passage. */
+    fiblLast: ReadonlyMap<string, number>
+    /** Recent FIB-L accuracy (0–1), or null with no data. */
+    fiblAccuracy: number | null
+    wfd: readonly WfdSentence[]
+    /** Last time each WFD sentence was dictated. */
+    wfdLast: ReadonlyMap<string, number>
+  }
 }
+
+export const WFD_SET = 6
 
 export function isHuman(ex: Exercise): boolean {
   return ex.tags.includes('human-audio')
@@ -84,7 +97,26 @@ export function buildDailyPlan(input: PlanInput): DailyPlan {
   add(pick((e) => e.kind === 'realistic' || sparse(e)), 'practice', 'realistic', 'realistic')
   add(pick((e) => e.kind === 'realistic'), 'exam', 'realistic', 'exam')
 
-  // 4. Mistake-bank review (~3–5 min) with *different* passages containing the same confusions.
+  // 4. Listening tasks: FIB-L (passage with blanks) and a WFD set (dictation). These carry most of
+  //    the Listening score alongside HIW. Extra FIB-L when its accuracy is low.
+  const L = input.listening
+  if (L) {
+    const fibl = library
+      .filter((e) => isHuman(e) && !used.has(e.id) && e.kind !== 'overclick')
+      .sort((a, b) => (L.fiblLast.get(a.id) ?? 0) - (L.fiblLast.get(b.id) ?? 0) || a.id.localeCompare(b.id))
+    const nFibl = L.fiblAccuracy !== null && L.fiblAccuracy < 0.7 ? 2 : 1
+    for (const ex of fibl.slice(0, nFibl)) {
+      used.add(ex.id)
+      items.push({ exerciseId: ex.id, mode: 'practice', speed: 1, block: 'fibl', task: 'fibl', reason: 'fibl' })
+    }
+    const seed = [...input.date].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
+    const wfd = [...L.wfd]
+      .sort((a, b) => (L.wfdLast.get(a.id) ?? 0) - (L.wfdLast.get(b.id) ?? 0) || (((seed ^ a.from) % 97) - ((seed ^ b.from) % 97)))
+      .slice(0, WFD_SET)
+    if (wfd.length) items.push({ exerciseId: wfd[0].exerciseId, mode: 'practice', speed: 1, block: 'wfd', task: 'wfd', reason: 'wfd', sentences: wfd.map((x) => x.id) })
+  }
+
+  // 5. Mistake-bank review (~3–5 min) with *different* passages containing the same confusions.
   const due = input.mistakes.filter((m) => isDue(m, now))
   const dueCats = [...new Set(due.map((m) => m.trapCategory).filter((c): c is TrapCategory => !!c))]
   for (const cat of dueCats.slice(0, 2)) {
@@ -130,8 +162,12 @@ export function estimatedMinutes(plan: DailyPlan, exercises: ReadonlyMap<string,
   let ms = 0
   for (const i of plan.items) {
     const ex = exercises.get(i.exerciseId)
-    // countdown + audio + time reviewing results
-    ms += (ex ? ex.durationMs / i.speed : 45_000) + 7_000 + (plan.kind === 'overclick-test' ? 10_000 : 75_000)
+    if (i.task === 'wfd') {
+      ms += (i.sentences?.length ?? WFD_SET) * 35_000
+      continue
+    }
+    // countdown + audio + time reviewing results (FIB-L: plus typing/checking)
+    ms += (ex ? ex.durationMs / i.speed : 45_000) + 7_000 + (plan.kind === 'overclick-test' ? 10_000 : i.task === 'fibl' ? 100_000 : 75_000)
   }
   return Math.round(ms / 60_000)
 }

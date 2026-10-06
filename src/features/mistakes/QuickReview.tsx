@@ -7,6 +7,8 @@ import { isDue, MASTERED } from '../../domain/srs'
 import type { MistakeItem } from '../../domain/types'
 import { useI18n } from '../../i18n'
 import { Badge, Button, ButtonLink, Card, PageHeader } from '../../ui/kit'
+import { sameWord } from '../../domain/listening'
+import { RAW_INPUT } from '../listening/FiblPlayer'
 import { WordSheet, type WordTarget } from '../vocab/WordSheet'
 
 const SESSION_SIZE = 12
@@ -90,6 +92,13 @@ export function QuickReview() {
   }
 
   const fp = card.type === 'false-positive'
+  if (card.type === 'spelling')
+    return (
+      <div className="space-y-4">
+        <PageHeader title={t('mistakes.quickReview')} sub={t('quick.progress', { n: i + 1, total: deck.length })} />
+        <SpellingCard key={card.id} card={card} parts={parts} onPlay={(r) => ex && void playSnippet(ex, card.tokenIndex, r)} hasAudio={!!ex} onGrade={(ok) => void grade(ok)} />
+      </div>
+    )
   return (
     <div className="space-y-4">
       <PageHeader title={t('mistakes.quickReview')} sub={t('quick.progress', { n: i + 1, total: deck.length })} />
@@ -150,5 +159,79 @@ export function QuickReview() {
       </Card>
       {word && <WordSheet target={word} onClose={() => setWord(null)} />}
     </div>
+  )
+}
+
+/** Spelling card: hear the word in context, type it; graded automatically. */
+function SpellingCard({
+  card,
+  parts,
+  onPlay,
+  hasAudio,
+  onGrade,
+}: {
+  card: MistakeItem
+  parts: { before: string; word: string; after: string } | null
+  onPlay: (rate: number) => void
+  hasAudio: boolean
+  onGrade: (ok: boolean) => void
+}) {
+  const { t } = useI18n()
+  const [typed, setTyped] = useState('')
+  const [checked, setChecked] = useState<boolean | null>(null)
+  const check = () => setChecked(sameWord(card.spoken, typed))
+  return (
+    <Card>
+      <Badge tone="warn">{t('mistakes.type.spelling')}</Badge>
+      <p className="mt-4 text-lg leading-relaxed text-ink">
+        …{parts?.before}
+        <span className="mx-1 inline-block min-w-16 border-b-2 border-ink-3 text-center">{checked === null ? '\u00a0' : card.spoken}</span>
+        {parts?.after}…
+      </p>
+      <p className="mt-2 text-sm text-ink-3">{t('quick.promptSpelling')}</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {hasAudio ? (
+          <>
+            <Button onClick={() => onPlay(1)}>▶ {t('quick.play')}</Button>
+            <Button onClick={() => onPlay(0.8)}>▶ 0.8×</Button>
+          </>
+        ) : (
+          <span className="text-sm text-ink-3">{t('quick.noAudio')}</span>
+        )}
+      </div>
+      <form
+        className="mt-4 flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (checked === null) check()
+        }}
+      >
+        <input
+          {...RAW_INPUT}
+          autoFocus
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          disabled={checked !== null}
+          className="min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-3 py-2 text-base text-ink focus:border-accent focus:outline-none"
+          aria-label={t('quick.typeIt')}
+          placeholder={t('quick.typeIt')}
+        />
+        {checked === null && (
+          <Button variant="primary" type="submit" disabled={!typed.trim()}>
+            {t('quick.check')}
+          </Button>
+        )}
+      </form>
+      {checked !== null && (
+        <div className="mt-4 space-y-3">
+          <div className={`rounded-lg px-4 py-3 text-base ${checked ? 'bg-good-soft text-good' : 'bg-bad-soft text-bad'}`}>
+            {checked ? `✓ ${card.spoken}` : t('quick.spellingWrong', { typed, word: card.spoken })}
+          </div>
+          <Button variant="primary" className="w-full py-3" onClick={() => onGrade(checked)}>
+            {t('player.next')} →
+          </Button>
+        </div>
+      )}
+    </Card>
   )
 }

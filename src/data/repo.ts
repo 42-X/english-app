@@ -1,8 +1,9 @@
 import { isHiwAttempt } from '../domain/adaptive'
 import { contextAround, falsePositiveRows } from '../domain/analysis'
-import { buildDailyPlan, buildOverclickTest, hasTrap, localDate } from '../domain/plan'
+import { extractWfd, MAX_NEW_SPELLING_PER_SET, worthReviewing } from '../domain/listening'
+import { buildDailyPlan, buildOverclickTest, hasTrap, localDate, type PlanInput } from '../domain/plan'
 import { isDue, recordMistake, reviewMistake } from '../domain/srs'
-import type { Attempt, DailyPlan, Exercise, MistakeItem, Settings, VocabEntry } from '../domain/types'
+import type { Attempt, DailyPlan, Exercise, ListeningAttempt, MistakeItem, Settings, VocabEntry } from '../domain/types'
 import { headword, parseDictionary, parseWiktionary, type DictionaryResult } from '../domain/vocab'
 import { db, getMeta, setMeta, type AttemptRow } from './db'
 
@@ -125,6 +126,7 @@ export async function todaysPlan(exercises: readonly Exercise[], speed: number, 
     mistakes: await liveMistakes(),
     speed,
     now: Date.now(),
+    listening: await listeningInput(exercises),
   })
   await db.plans.put({ ...plan, dirty: 1 })
   return plan
@@ -144,11 +146,103 @@ export async function sessionAttempts(plan: DailyPlan): Promise<Attempt[]> {
   return rows.filter((a): a is AttemptRow => !!a && !a.deleted)
 }
 
+/** FIB-L / WFD history in the shape the plan builder needs. */
+async function listeningInput(exercises: readonly Exercise[]): Promise<PlanInput['listening']> {
+  const hist = await recentListening(undefined, 300)
+  const fiblLast = new Map<string, number>()
+  const wfdLast = new Map<string, number>()
+  for (const a of hist) {
+    if (a.task === 'fibl' && !fiblLast.has(a.exerciseId)) fiblLast.set(a.exerciseId, a.completedAt)
+    if (a.task === 'wfd') for (const it of a.items) if (!wfdLast.has(it.ref)) wfdLast.set(it.ref, a.completedAt)
+  }
+  const fibl = hist.filter((a) => a.task === 'fibl').slice(0, 5)
+  const total = fibl.reduce((n, a) => n + a.total, 0)
+  return {
+    fiblLast,
+    fiblAccuracy: total ? fibl.reduce((n, a) => n + a.correct, 0) / total : null,
+    wfd: extractWfd(exercises),
+    wfdLast,
+  }
+}
+
+// ── FIB-L / WFD ─────────────────────────────────────────────────────
+
+/**
+ * Save a FIB-L or WFD result. Words she typed wrongly or missed go into the mistake bank as
+ * "spelling" items (hear it → type it), and the matching plan item is ticked off.
+ */
+export async function saveListeningAttempt(a: ListeningAttempt, exById: ReadonlyMap<string, Exercise>): Promise<void> {
+  const now = a.completedAt
+  await db.transaction('rw', db.listening, db.mistakes, db.plans, async () => {
+    await db.listening.put({ ...a, dirty: 1 })
+    let added = 0
+    for (const item of a.items) {
+      const ex = exById.get(item.exerciseId)
+      if (!ex) continue
+      const words = a.task === 'fibl' ? [{ expected: item.expected, typed: item.typed, kind: item.kinds[0], index: Number(item.ref) }] : wfdWords(item, ex)
+      for (const w of words) {
+        if (w.index < 0 || !worthReviewing(w.expected, w.kind)) continue
+        if (a.task === 'wfd' && ++added > MAX_NEW_SPELLING_PER_SET) break
+        const typed = w.typed?.trim() || '—'
+        const id = `spelling:${typed.toLowerCase()}>${w.expected.toLowerCase()}`
+        const existing = await db.mistakes.get(id)
+        const m = recordMistake(
+          existing?.deleted ? undefined : existing,
+          { type: 'spelling', display: typed, spoken: w.expected, exerciseId: ex.id, tokenIndex: w.index, context: contextAround(ex.tokens, w.index, 5, true) },
+          now,
+        )
+        await db.mistakes.put({ ...m, dirty: 1, deleted: undefined })
+      }
+    }
+    if (a.planId) {
+      const plan = await db.plans.get(a.planId)
+      if (plan) {
+        let done = false
+        const items = plan.items.map((i) => {
+          if (done || i.attemptId || i.task !== a.task) return i
+          if (a.task === 'fibl' && i.exerciseId !== a.exerciseId) return i
+          done = true
+          return { ...i, attemptId: a.id }
+        })
+        await db.plans.put({ ...plan, items, updatedAt: now, dirty: 1 })
+      }
+    }
+  })
+}
+
+/** Map a WFD sentence result back to token positions so each wrong word has its own audio snippet. */
+function wfdWords(item: ListeningAttempt['items'][number], ex: Exercise) {
+  const from = Number(item.ref.split(':').pop())
+  return item.kinds.map((kind, k) => ({
+    kind,
+    index: Number.isFinite(from) ? from + k : -1,
+    expected: ex.tokens[from + k]?.spokenText ?? '',
+    typed: item.typedWords?.[k] ?? '',
+  }))
+}
+
+export async function recentListening(task?: ListeningAttempt['task'], limit = 200): Promise<ListeningAttempt[]> {
+  const all = await db.listening.orderBy('completedAt').reverse().filter((a) => !a.deleted && (!task || a.task === task)).limit(limit).toArray()
+  return all
+}
+
+/** Add the FIB-L / WFD items to a plan made before those tasks existed. */
+export async function addListeningToPlan(planId: string, exercises: readonly Exercise[]): Promise<void> {
+  const plan = await db.plans.get(planId)
+  if (!plan || plan.items.some((i) => i.task === 'fibl' || i.task === 'wfd')) return
+  const fresh = buildDailyPlan({ date: plan.date, exercises, attempts: [], mistakes: [], speed: 1, now: Date.now(), listening: await listeningInput(exercises) })
+  const have = new Set(plan.items.map((i) => i.exerciseId))
+  const extra = fresh.items.filter((i) => i.task === 'wfd' || (i.task === 'fibl' && !have.has(i.exerciseId)))
+  const reviewAt = plan.items.findIndex((i) => i.block === 'review')
+  const items = reviewAt < 0 ? [...plan.items, ...extra] : [...plan.items.slice(0, reviewAt), ...extra, ...plan.items.slice(reviewAt)]
+  await db.plans.put({ ...plan, items, updatedAt: Date.now(), dirty: 1 })
+}
+
 /** After finishing today's plan: append a few more exercises chosen for current weaknesses. */
 export async function extendPlan(planId: string, exercises: readonly Exercise[], speed: number, count = 3): Promise<void> {
   const plan = await db.plans.get(planId)
   if (!plan) return
-  const fresh = buildDailyPlan({ date: plan.date, exercises, attempts: await recentAttempts(60), mistakes: await liveMistakes(), speed, now: Date.now() })
+  const fresh = buildDailyPlan({ date: plan.date, exercises, attempts: await recentAttempts(60), mistakes: await liveMistakes(), speed, now: Date.now(), listening: await listeningInput(exercises) })
   const have = new Set(plan.items.map((i) => i.exerciseId))
   const extra = fresh.items.filter((i) => (i.block === 'drill' || i.block === 'realistic') && !have.has(i.exerciseId)).slice(0, count)
   await db.plans.put({ ...plan, items: [...plan.items, ...extra], updatedAt: Date.now(), dirty: 1 })

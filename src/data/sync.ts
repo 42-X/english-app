@@ -15,6 +15,7 @@ const REMOTE: Record<SyncedTable, string> = {
   customExercises: 'custom_exercises',
   settings: 'settings',
   vocab: 'vocab',
+  listening: 'listening_attempts',
 }
 
 type Row = { id: string; updatedAt: number; dirty: 0 | 1; deleted?: 1 }

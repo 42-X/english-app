@@ -5,7 +5,8 @@ import { db } from '../../data/db'
 import { recentAttempts, sessionAttempts } from '../../data/repo'
 import { focusCoaching } from '../../domain/coaching'
 import { overclickReport, sessionSummary, type Delta, type PointLoss } from '../../domain/report'
-import type { Attempt, DailyPlan } from '../../domain/types'
+import type { Attempt, DailyPlan, ListeningAttempt } from '../../domain/types'
+import { listeningStats } from '../../domain/listening'
 import { useCoachText, useI18n } from '../../i18n'
 import { pct } from '../../ui/format'
 import { ButtonLink, Card, CoachLine, PageHeader, Stat } from '../../ui/kit'
@@ -20,7 +21,9 @@ export function ReportPage() {
     if (!plan) return null
     const attempts = await sessionAttempts(plan)
     const recent = await recentAttempts(200)
-    return { plan, attempts, recent }
+    const listening = (await db.listening.bulkGet(plan.items.filter((i) => i.task === 'fibl' || i.task === 'wfd').map((i) => i.attemptId ?? '')))
+      .filter((a): a is NonNullable<typeof a> => !!a && !a.deleted)
+    return { plan, attempts, recent, listening }
   }, [id])
   if (data === undefined) return <p className="p-6 text-ink-2">{t('common.loading')}</p>
   if (data === null) return <p className="p-6 text-ink-2">{t('player.notFound')}</p>
@@ -31,6 +34,7 @@ interface Props {
   plan: DailyPlan
   attempts: Attempt[]
   recent: Attempt[]
+  listening: ListeningAttempt[]
 }
 
 function OverclickTestReport({ plan, attempts }: Props) {
@@ -83,7 +87,7 @@ function OverclickTestReport({ plan, attempts }: Props) {
   )
 }
 
-function DailySummary({ plan, attempts, recent }: Props) {
+function DailySummary({ plan, attempts, recent, listening }: Props) {
   const { t, tk } = useI18n()
   const coach = useCoachText()
   const { exerciseById } = useAppState()
@@ -120,6 +124,8 @@ function DailySummary({ plan, attempts, recent }: Props) {
           </ul>
         )}
       </Card>
+
+      {listening.length > 0 && <ListeningSummary listening={listening} />}
 
       <Card title={t('report.day.tomorrow')}>
         <div className="space-y-2">
@@ -171,5 +177,20 @@ function LossLine({ l }: { l: PointLoss }) {
       <span className="text-ink">{label}</span>
       <span className="font-medium text-bad tabular-nums">−{l.points}</span>
     </li>
+  )
+}
+
+function ListeningSummary({ listening }: { listening: ListeningAttempt[] }) {
+  const { t, tk } = useI18n()
+  const s = listeningStats(listening)
+  const worst = (['ending', 'spelling', 'wrong', 'blank'] as const).filter((k) => s.kinds[k] > 0).sort((a, b) => s.kinds[b] - s.kinds[a])
+  return (
+    <Card title={t('lst.progressTitle')}>
+      <div className="grid grid-cols-2 gap-2">
+        {s.fibl.attempts > 0 && <Stat label="Fill in the Blanks" value={`${s.fibl.correct}/${s.fibl.total}`} sub={pct(s.fibl.accuracy)} />}
+        {s.wfd.attempts > 0 && <Stat label="Write From Dictation" value={`${s.wfd.correct}/${s.wfd.total}`} sub={pct(s.wfd.accuracy)} />}
+      </div>
+      {worst[0] && <CoachLine tone="warn">{tk(`lst.${worst[0]}${worst[0] === 'blank' ? '.fibl' : ''}`, { n: s.kinds[worst[0]] })}</CoachLine>}
+    </Card>
   )
 }

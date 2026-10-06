@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Attempt, DailyPlan, Exercise, MistakeItem, Settings, VocabEntry } from '../domain/types'
+import type { Attempt, DailyPlan, Exercise, ListeningAttempt, MistakeItem, Settings, VocabEntry } from '../domain/types'
 
 /** Every synced record carries a dirty flag (1 = not yet pushed) and an optional tombstone. */
 export interface SyncFields {
@@ -13,6 +13,7 @@ export type PlanRow = DailyPlan & SyncFields
 export type CustomExerciseRow = Exercise & SyncFields
 export type SettingsRow = Settings & SyncFields & { id: 'settings' }
 export type VocabRow = VocabEntry & SyncFields
+export type ListeningRow = ListeningAttempt & SyncFields
 
 export interface MetaRow {
   key: string
@@ -33,6 +34,7 @@ export const db = new Dexie('hiw-trainer') as Dexie & {
   meta: EntityTable<MetaRow, 'key'>
   audio: EntityTable<AudioBlobRow, 'id'>
   vocab: EntityTable<VocabRow, 'id'>
+  listening: EntityTable<ListeningRow, 'id'>
 }
 
 db.version(1).stores({
@@ -50,7 +52,12 @@ db.version(2).stores({
   vocab: 'id, status, addedAt, dirty',
 })
 
-export const SYNCED_TABLES = ['attempts', 'mistakes', 'plans', 'customExercises', 'settings', 'vocab'] as const
+// v3: FIB-L and WFD results.
+db.version(3).stores({
+  listening: 'id, task, completedAt, dirty',
+})
+
+export const SYNCED_TABLES = ['attempts', 'mistakes', 'plans', 'customExercises', 'settings', 'vocab', 'listening'] as const
 export type SyncedTable = (typeof SYNCED_TABLES)[number]
 
 export async function getMeta<T>(key: string): Promise<T | undefined> {

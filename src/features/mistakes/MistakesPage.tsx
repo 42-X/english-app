@@ -71,7 +71,7 @@ function MistakeBank() {
   const groups = useMemo(() => {
     const g = new Map<string, MistakeItem[]>()
     for (const m of [...mistakes].sort((a, b) => a.dueAt - b.dueAt)) {
-      const k = m.type === 'false-positive' ? 'false-positive' : (m.trapCategory ?? 'other')
+      const k = m.type === 'false-positive' || m.type === 'spelling' ? m.type : (m.trapCategory ?? 'other')
       g.set(k, [...(g.get(k) ?? []), m])
     }
     return [...g.entries()]
@@ -114,7 +114,7 @@ function MistakeBank() {
           key={key}
           title={
             <span className="flex items-center gap-2">
-              {key === 'false-positive' ? t('mistakes.type.false-positive') : tk(`trap.${key}`)}
+              {key === 'false-positive' || key === 'spelling' ? tk(`mistakes.type.${key}`) : tk(`trap.${key}`)}
               <Badge>{items.length}</Badge>
             </span>
           }
@@ -127,7 +127,13 @@ function MistakeBank() {
                 <li key={m.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
                   <div className="min-w-48 flex-1">
                     <div className="text-base">
-                      {m.type === 'miss' ? (
+                      {m.type === 'spelling' ? (
+                        <>
+                          <span className="text-ink-3">{t('lst.youTyped', { w: m.display })}</span>
+                          <span className="mx-1.5 text-ink-3">→</span>
+                          <span className="font-semibold text-ink">{m.spoken}</span>
+                        </>
+                      ) : m.type === 'miss' ? (
                         <>
                           <span className="text-ink-3 line-through decoration-1">{m.display}</span>
                           <span className="mx-1.5 text-ink-3">→</span>
@@ -165,7 +171,7 @@ function MistakeBank() {
               )
             })}
           </ul>
-          {key !== 'false-positive' && key !== 'other' && similar(key).length > 1 && (
+          {key !== 'false-positive' && key !== 'spelling' && key !== 'other' && similar(key).length > 1 && (
             <div className="mt-3 border-t border-line pt-3">
               <div className="mb-1.5 text-xs font-medium text-ink-3">{t('mistakes.similar')}</div>
               <div className="flex flex-wrap gap-1.5">

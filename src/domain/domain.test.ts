@@ -318,6 +318,21 @@ describe('daily plan', () => {
     expect(plan.items.some((i) => i.mode === 'exam')).toBe(true)
   })
 
+  it('adds FIB-L and a WFD set when listening data is given', () => {
+    const human = lib.map((e) => ({ ...e, tags: ['human-audio'] }))
+    const wfd = Array.from({ length: 10 }, (_, k) => ({ id: `r1:${k}`, exerciseId: 'r1', from: k, to: k + 8, startMs: 0, endMs: 4000, text: '', words: [] }))
+    const plan = buildDailyPlan({
+      date: '2026-10-06', exercises: human, attempts: [], mistakes: [], speed: 1, now: 0,
+      listening: { fiblLast: new Map(), fiblAccuracy: 0.5, wfd, wfdLast: new Map([['r1:0', 5]]) },
+    })
+    const fibl = plan.items.filter((i) => i.task === 'fibl')
+    expect(fibl).toHaveLength(2) // low accuracy → two passages
+    expect(new Set(plan.items.map((i) => i.exerciseId + i.task)).size).toBe(plan.items.length)
+    const set = plan.items.find((i) => i.task === 'wfd')!
+    expect(set.sentences).toHaveLength(6)
+    expect(set.sentences).not.toContain('r1:0') // done recently → not repeated first
+  })
+
   it('emphasises over-click training when precision is low', () => {
     const ex = lib[8]
     const as = Array.from({ length: 5 }, () => attempt({ ex, selected: [5, 15, 1, 2, 3, 4] }))
@@ -480,5 +495,110 @@ describe('wiktionary fallback', () => {
     })!
     expect(r.meanings).toEqual([{ partOfSpeech: 'noun', definition: 'The state of consciousness & perception.', example: 'public awareness' }])
     expect(parseWiktionary('x', { fr: [] })).toBeNull()
+  })
+})
+
+describe('listening: answers', () => {
+  it('accepts British and American spellings but not lookalike mistakes', async () => {
+    const { sameWord } = await import('./listening')
+    for (const [a, b] of [['colour', 'color'], ['behaviour', 'behavior'], ['organised', 'organized'], ['analyse', 'analyze'], ['centre', 'center'], ['travelled', 'traveled'], ['defence', 'defense'], ['Resilience,', 'resilience']])
+      expect(sameWord(a, b), `${a}/${b}`).toBe(true)
+    for (const [a, b] of [['four', 'for'], ['filled', 'filed'], ['does', 'des'], ['sense', 'sence'], ['hour', 'hor']]) expect(sameWord(a, b), `${a}/${b}`).toBe(false)
+  })
+  it('classifies wrong answers', async () => {
+    const { classifyAnswer } = await import('./listening')
+    expect(classifyAnswer('developments', 'development')).toBe('ending')
+    expect(classifyAnswer('increased', 'increase')).toBe('ending')
+    expect(classifyAnswer('environment', 'enviroment')).toBe('spelling')
+    expect(classifyAnswer('necessary', 'neccessary')).toBe('spelling')
+    expect(classifyAnswer('climate', 'culture')).toBe('wrong')
+    expect(classifyAnswer('climate', '  ')).toBe('blank')
+    expect(classifyAnswer('climate', 'Climate.')).toBe('correct')
+    for (const [e, t] of [['these', 'this'], ['they', 'the'], ['any', 'and'], ['in', 'is']]) expect(classifyAnswer(e, t), `${e}/${t}`).toBe('wrong')
+  })
+})
+
+describe('listening: FIB-L blanks', () => {
+  it('chooses spaced content words, never names or function words, deterministically', async () => {
+    const { fiblBlanks } = await import('./listening')
+    const words = 'The Hippocampus plays important roles in the consolidation of information from short-term memory to long-term memory and in spatial memory that enables navigation. In humans and other primates the structure is located in the medial temporal lobe and Alzheimer damages it early because neurons there are vulnerable to reduced oxygen and chronic stress over many decades of life.'.split(' ')
+    const ex = exercise(words.length, {}, { id: 'fib-test' })
+    ex.tokens.forEach((t, i) => {
+      t.spokenText = t.displayText = words[i].replace(/[.,]/g, '')
+      t.trailing = /[.]$/.test(words[i]) ? '.' : ''
+    })
+    const blanks = fiblBlanks(ex)
+    expect(blanks.length).toBeGreaterThanOrEqual(5)
+    expect(blanks).toEqual(fiblBlanks(ex))
+    for (let k = 1; k < blanks.length; k++) expect(blanks[k] - blanks[k - 1]).toBeGreaterThanOrEqual(4)
+    for (const b of blanks) {
+      const w = ex.tokens[b].spokenText
+      expect(w.length).toBeGreaterThanOrEqual(4)
+      expect(['Alzheimer', 'Hippocampus', 'other', 'there', 'because']).not.toContain(w)
+    }
+  })
+})
+
+describe('listening: WFD', () => {
+  it('scores one point per correct word, order-insensitive, and explains misses', async () => {
+    const { scoreWfd } = await import('./listening')
+    const r = scoreWfd('The students submitted their assignments before the deadline'.split(' '), 'the students submit there assignment before deadline extra')
+    expect(r.total).toBe(8)
+    expect(r.correct).toBe(4) // the, students, before, deadline
+    const kinds = Object.fromEntries(r.words.map((w) => [w.expected, w.kind]))
+    expect(kinds.submitted).toBe('ending')
+    expect(kinds.assignments).toBe('ending')
+    expect(kinds.their).toBe('blank') // "there" is a different word: their counts as missing, "there" as extra
+    expect(r.extra).toEqual(['there', 'extra'])
+  })
+  it('extracts dictation sentences of exam length without digits', async () => {
+    const { extractWfd } = await import('./listening')
+    const words = 'Intro words here. Many students find dictation difficult because the speaker does not pause. In 1990 the test changed completely and forever for everyone involved.'.split(' ')
+    const ex = exercise(words.length, {}, { id: 'wfd-test', tags: ['human-audio'] })
+    ex.tokens.forEach((t, i) => {
+      t.spokenText = t.displayText = words[i].replace(/[.,]/g, '')
+      t.trailing = /[.]$/.test(words[i]) ? '.' : ''
+    })
+    const s = extractWfd([ex])
+    expect(s.map((x) => x.words.join(' '))).toEqual(['Many students find dictation difficult because the speaker does not pause'])
+    expect(s[0].startMs).toBeGreaterThanOrEqual(ex.tokens[2].endMs)
+  })
+})
+
+describe('listening: stats and coaching', () => {
+  const fibl = {
+    id: 'a', task: 'fibl' as const, exerciseId: 'e', mode: 'practice' as const, startedAt: 0, completedAt: 0, updatedAt: 0, correct: 2, total: 5,
+    items: [
+      { ref: '1', exerciseId: 'e', expected: 'climate', typed: 'climate', correct: 1, total: 1, kinds: ['correct' as const] },
+      { ref: '5', exerciseId: 'e', expected: 'emissions', typed: 'emission', correct: 0, total: 1, kinds: ['ending' as const] },
+      { ref: '9', exerciseId: 'e', expected: 'adaptation', typed: 'adaptasion', correct: 0, total: 1, kinds: ['spelling' as const] },
+      { ref: '14', exerciseId: 'e', expected: 'reducing', typed: '', correct: 0, total: 1, kinds: ['blank' as const] },
+      { ref: '20', exerciseId: 'e', expected: 'renewable', typed: 'renewable', correct: 1, total: 1, kinds: ['correct' as const] },
+    ],
+  }
+  it('aggregates accuracy, error kinds and missed words', async () => {
+    const { listeningStats } = await import('./listening')
+    const s = listeningStats([fibl])
+    expect(s.fibl).toMatchObject({ attempts: 1, correct: 2, total: 5, accuracy: 0.4 })
+    expect(s.wfd.accuracy).toBeNull()
+    expect(s.kinds).toEqual({ correct: 2, ending: 1, spelling: 1, wrong: 0, blank: 1 })
+    expect(s.topWords.map((w) => w.word)).toEqual(['adaptation', 'emissions', 'reducing'])
+  })
+  it('coaches the biggest loss and tells her to guess blanks (no negative marking)', async () => {
+    const { listeningCoaching } = await import('./listening')
+    const keys = listeningCoaching(fibl).map((c) => c.key)
+    expect(keys[0]).toBe('lst.score')
+    expect(keys).toEqual(expect.arrayContaining(['lst.ending', 'lst.spelling', 'lst.blank.fibl']))
+  })
+})
+
+describe('listening: spelling bank filter', () => {
+  it('keeps heard-but-misspelled words and substantial missed words only', async () => {
+    const { worthReviewing } = await import('./listening')
+    expect(worthReviewing('the', 'spelling')).toBe(true)
+    expect(worthReviewing('the', 'blank')).toBe(false)
+    expect(worthReviewing('which', 'wrong')).toBe(false)
+    expect(worthReviewing('emissions', 'blank')).toBe(true)
+    expect(worthReviewing('emissions', 'correct')).toBe(false)
   })
 })

@@ -359,3 +359,54 @@ export async function playSnippet(ex: Exercise, tokenIndex: number, rate: number
   speechSynthesis.speak(u)
   current = { stop: () => speechSynthesis.cancel() }
 }
+
+/**
+ * Play one window of an exercise's recording (a WFD sentence) on the shared element.
+ * Calls onProgress with 0–1 and onEnd when the window finishes. Returns a stop function.
+ */
+export async function playRange(
+  ex: Exercise,
+  startMs: number,
+  endMs: number,
+  handlers: { onProgress?: (frac: number) => void; onEnd?: () => void; volume?: number } = {},
+): Promise<() => void> {
+  stopSnippet()
+  if (!ex.audioUrl || ex.source === 'browser-tts') {
+    handlers.onEnd?.()
+    return () => {}
+  }
+  unlockAudio()
+  const { src, revoke } = await resolveAudioUrl(ex.audioUrl)
+  const el = sharedAudio()
+  el.src = src
+  el.playbackRate = 1
+  el.volume = handlers.volume ?? 1
+  let raf = 0
+  let done = false
+  const stop = () => {
+    if (done) return
+    done = true
+    cancelAnimationFrame(raf)
+    el.pause()
+    revoke?.()
+  }
+  current = { stop }
+  await new Promise<void>((r) => {
+    if (el.readyState >= 1) r()
+    else el.addEventListener('loadedmetadata', () => r(), { once: true })
+  })
+  el.currentTime = startMs / 1000
+  const tick = () => {
+    const t = el.currentTime * 1000
+    handlers.onProgress?.(Math.min(1, Math.max(0, (t - startMs) / (endMs - startMs))))
+    if (t >= endMs || el.ended) {
+      stop()
+      handlers.onEnd?.()
+      return
+    }
+    raf = requestAnimationFrame(tick)
+  }
+  await el.play()
+  raf = requestAnimationFrame(tick)
+  return stop
+}

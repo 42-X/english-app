@@ -179,7 +179,8 @@ export interface AttemptSummary {
 
 export interface MistakeItem {
   id: string
-  type: 'miss' | 'false-positive'
+  /** spelling: heard in FIB-L / WFD but typed wrongly (display = what she typed). */
+  type: 'miss' | 'false-positive' | 'spelling'
   display: string
   spoken: string
   trapCategory?: TrapCategory
@@ -199,7 +200,11 @@ export interface PlanItem {
   exerciseId: string
   mode: Mode
   speed: number
-  block: 'warmup' | 'drill' | 'realistic' | 'review'
+  block: 'warmup' | 'drill' | 'realistic' | 'fibl' | 'wfd' | 'review'
+  /** Which task this item is (HIW when absent). */
+  task?: 'hiw' | ListeningTask
+  /** WFD set: the sentence ids to dictate. */
+  sentences?: string[]
   reason: string
   attemptId?: string
 }
@@ -257,5 +262,40 @@ export interface VocabEntry {
   status: 'learning' | 'known'
   addedAt: number
   knownAt?: number
+  updatedAt: number
+}
+
+export type ListeningTask = 'fibl' | 'wfd'
+
+/** One FIB-L blank or one WFD sentence. */
+export interface ListeningItemResult {
+  /** FIB-L: token index. WFD: sentence id. */
+  ref: string
+  exerciseId: string
+  /** FIB-L: the word. WFD: the sentence. */
+  expected: string
+  typed: string
+  correct: number
+  total: number
+  /** FIB-L: one entry. WFD: one per word of the sentence. */
+  kinds: ('correct' | 'ending' | 'spelling' | 'wrong' | 'blank')[]
+  /** WFD: what she typed for each word of the sentence (aligned with kinds). */
+  typedWords?: (string | null)[]
+  /** WFD practice: how many times she replayed it. */
+  replays?: number
+}
+
+export interface ListeningAttempt {
+  id: string
+  task: ListeningTask
+  /** FIB-L: the passage. WFD: the first sentence's passage (a set spans several). */
+  exerciseId: string
+  mode: 'practice' | 'exam'
+  items: ListeningItemResult[]
+  correct: number
+  total: number
+  planId?: string
+  startedAt: number
+  completedAt: number
   updatedAt: number
 }

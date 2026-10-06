@@ -40,7 +40,7 @@ export function PlayerPage() {
   )
 }
 
-function readVolume(): number {
+export function readVolume(): number {
   try {
     const v = Number(localStorage.getItem('hiw-volume'))
     return v > 0 && v <= 1 ? v : 1
@@ -245,7 +245,7 @@ function liveStatus(spoken: number, pointer: number | null): { key: StringKey | 
 }
 
 /** Exam-style audio box: status line, progress bar and volume, directly above the passage. */
-function StatusBox(p: {
+export function StatusBox(p: {
   phase: Phase
   mediaMs: number
   durationMs: number

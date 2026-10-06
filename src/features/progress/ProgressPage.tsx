@@ -5,6 +5,9 @@ import { recentAttempts } from '../../data/repo'
 import { groupBy, groupStats, isHiwAttempt, speedAdvice, THRESHOLDS, trapStats, type GroupStats } from '../../domain/adaptive'
 import { speedCoaching } from '../../domain/coaching'
 import { rollingDiagnosis } from '../../domain/report'
+import { listeningStats } from '../../domain/listening'
+import { recentListening } from '../../data/repo'
+import { Link } from 'react-router-dom'
 import type { Attempt, Confidence } from '../../domain/types'
 import { useCoachText, useI18n } from '../../i18n'
 import { pct, secs, signed, speedLabel } from '../../ui/format'
@@ -159,6 +162,8 @@ export function ProgressPage() {
         </Card>
       </div>
 
+      <ListeningCard />
+
       <ConfidenceCard attempts={all} />
     </div>
   )
@@ -247,6 +252,83 @@ function ConfidenceCard({ attempts }: { attempts: Attempt[] }) {
           )
         })}
       </div>
+    </Card>
+  )
+}
+
+const LISTENING_TARGETS = { fibl: 0.8, wfd: 0.85 } as const
+
+/** FIB-L and WFD: accuracy over the last 10 of each, where points go, most-missed words. */
+function ListeningCard() {
+  const { t, tk } = useI18n()
+  const all = useLiveQuery(() => recentListening(undefined, 200), [], [])
+  if (all.length === 0) {
+    return (
+      <Card title={t('lst.progressTitle')}>
+        <p className="text-sm text-ink-2">{t('lst.progressEmpty')}</p>
+        <div className="mt-3 flex gap-2">
+          <Link className="text-sm text-accent underline" to="/practice?task=fibl">
+            Fill in the Blanks →
+          </Link>
+          <Link className="text-sm text-accent underline" to="/practice?task=wfd">
+            Write From Dictation →
+          </Link>
+        </div>
+      </Card>
+    )
+  }
+  const recent = [...all.filter((a) => a.task === 'fibl').slice(0, 10), ...all.filter((a) => a.task === 'wfd').slice(0, 10)]
+  const s = listeningStats(recent)
+  const lost = s.kinds.ending + s.kinds.spelling + s.kinds.wrong + s.kinds.blank
+  return (
+    <Card title={t('lst.progressTitle')}>
+      <div className="grid grid-cols-2 gap-2">
+        <Stat
+          label="Fill in the Blanks"
+          value={pct(s.fibl.accuracy)}
+          tone={tone(s.fibl.accuracy, LISTENING_TARGETS.fibl)}
+          sub={t('lst.targetSub', { v: pct(LISTENING_TARGETS.fibl), n: s.fibl.attempts })}
+        />
+        <Stat
+          label="Write From Dictation"
+          value={pct(s.wfd.accuracy)}
+          tone={tone(s.wfd.accuracy, LISTENING_TARGETS.wfd)}
+          sub={t('lst.targetSub', { v: pct(LISTENING_TARGETS.wfd), n: s.wfd.attempts })}
+        />
+      </div>
+      {lost > 0 && (
+        <div className="mt-4">
+          <div className="mb-2 text-xs font-medium text-ink-3">{t('lst.whereLost')}</div>
+          <ul className="space-y-2">
+            {(['ending', 'spelling', 'wrong', 'blank'] as const).map((k) => (
+              <li key={k} className="grid grid-cols-[8rem_1fr_auto] items-center gap-2 text-sm">
+                <span className="truncate text-ink-2">{tk(`lst.kind.${k}`)}</span>
+                <span className="h-2 overflow-hidden rounded bg-surface-2" role="presentation">
+                  <span className="block h-full rounded bg-[var(--series-2)]" style={{ width: `${(s.kinds[k] / lost) * 100}%` }} />
+                </span>
+                <span className="text-xs text-ink-2 tabular-nums">{s.kinds[k]}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {s.topWords.length > 0 && (
+        <div className="mt-4">
+          <div className="mb-2 text-xs font-medium text-ink-3">{t('lst.topWords')}</div>
+          <div className="flex flex-wrap gap-1.5">
+            {s.topWords.map((w) => (
+              <span key={w.word} className="rounded-md bg-surface-2 px-2 py-0.5 text-xs text-ink">
+                {w.word}
+                {w.count > 1 && <span className="ml-1 text-ink-3">×{w.count}</span>}
+              </span>
+            ))}
+          </div>
+          <Link className="mt-3 inline-block text-sm text-accent underline" to="/review/quick">
+            {t('mistakes.quickReview')} →
+          </Link>
+        </div>
+      )}
+      <p className="mt-3 text-xs text-ink-3">{t('lst.targetNote')}</p>
     </Card>
   )
 }

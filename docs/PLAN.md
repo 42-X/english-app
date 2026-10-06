@@ -152,7 +152,10 @@ start in every mode; Next directly under the passage; volume control; phone auto
 - [x] My words: look up any word, definitions + pronunciation + Chinese dictionary link, learned count and milestones, synced
 
 ### P1 — soon after
-- [ ] FIB-L trainer (same audio + timestamp engine; type the missing words, spelling-aware scoring)
+- [x] FIB-L trainer (same audio + timestamps; strict spelling scoring with US/UK variants; error diagnosis; in the daily plan)
+- [x] WFD trainer (129 sentences from the passages; exam/practice modes; per-word feedback; in the daily plan)
+- [x] Spelling bank + typed spelling review for FIB-L/WFD slips
+- [ ] Repeat Sentence (needs speech recognition; Speaking already passing — lower priority)
 - [ ] Mistake-bank generated examples (new sentences per confusion pair, synthesised offline)
 - [ ] Guided speed-experiment flow
 - [ ] At-click confidence option (desktop modifier keys)

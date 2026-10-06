@@ -6,6 +6,9 @@ import { CreatePage } from '../features/create/CreatePage'
 import { HomePage } from '../features/home/HomePage'
 import { MistakesPage } from '../features/mistakes/MistakesPage'
 import { QuickReview } from '../features/mistakes/QuickReview'
+import { FiblPage } from '../features/listening/FiblPlayer'
+import { ListeningResultsPage } from '../features/listening/ListeningResults'
+import { WfdPage } from '../features/listening/WfdSession'
 import { PlayerPage } from '../features/player/PlayerPage'
 import { PracticePage } from '../features/practice/PracticePage'
 import { ProgressPage } from '../features/progress/ProgressPage'
@@ -42,6 +45,8 @@ function Localized() {
         <AutoUpdate />
         <Routes>
           <Route path="/play/:id" element={<PlayerPage />} />
+          <Route path="/fibl/:id" element={<FiblPage />} />
+          <Route path="/wfd" element={<WfdPage />} />
           <Route element={<Shell />}>
             <Route index element={<HomePage />} />
             <Route path="/practice" element={<PracticePage />} />
@@ -49,6 +54,7 @@ function Localized() {
             <Route path="/report/:id" element={<ReportPage />} />
             <Route path="/mistakes" element={<MistakesPage />} />
             <Route path="/review/quick" element={<QuickReview />} />
+            <Route path="/listening/:id" element={<ListeningResultsPage />} />
             <Route path="/progress" element={<ProgressPage />} />
             <Route path="/create" element={<CreatePage />} />
             <Route path="/settings" element={<SettingsPage />} />

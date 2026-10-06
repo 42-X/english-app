@@ -156,12 +156,13 @@ export function summarize(ex: Exercise, a: { selected: number[]; interactions: I
   }
 }
 
-/** Short text context around a token, for the mistake bank. */
-export function contextAround(tokens: readonly Token[], index: number, radius = 4): string {
+/** Short text context around a token, for the mistake bank. `spoken` uses what was said (FIB-L / WFD). */
+export function contextAround(tokens: readonly Token[], index: number, radius = 4, spoken = false): string {
   const from = Math.max(0, index - radius)
   const to = Math.min(tokens.length, index + radius + 1)
+  const w = (t: Token) => (spoken ? t.spokenText : t.displayText)
   return tokens
     .slice(from, to)
-    .map((t) => (t.index === index ? `[${t.leading}${t.displayText}${t.trailing}]` : `${t.leading}${t.displayText}${t.trailing}`))
+    .map((t) => (t.index === index ? `[${t.leading}${w(t)}${t.trailing}]` : `${t.leading}${w(t)}${t.trailing}`))
     .join(' ')
 }

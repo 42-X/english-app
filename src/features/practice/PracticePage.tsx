@@ -2,7 +2,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppState } from '../../app/state'
-import { recentAttempts, startOverclickTest } from '../../data/repo'
+import { recentAttempts, recentListening, startOverclickTest } from '../../data/repo'
+import { extractWfd, fiblBlanks } from '../../domain/listening'
 import { trapStats } from '../../domain/adaptive'
 import { hasTrap, isHuman } from '../../domain/plan'
 import { playLink } from '../home/HomePage'
@@ -14,7 +15,7 @@ import { effectiveSpeed, MODE_RULES, STRESS_SPEEDS } from '../modes'
 
 const PICKABLE: Mode[] = ['guided', 'fading', 'practice', 'drill', 'recovery', 'overclick', 'exam', 'stress']
 
-export function PracticePage() {
+function HiwPractice() {
   const { exercises, settings, ready } = useAppState()
   const { t, tk } = useI18n()
   const [params, setParams] = useSearchParams()
@@ -62,7 +63,6 @@ export function PracticePage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title={t('practice.title')} action={<ButtonLink to="/create">＋ {t('nav.create')}</ButtonLink>} />
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {PICKABLE.map((m) => (
@@ -165,5 +165,131 @@ function CatChip({ active, onClick, children }: { active: boolean; onClick: () =
     >
       {children}
     </button>
+  )
+}
+
+type Task = 'hiw' | 'fibl' | 'wfd'
+
+export function PracticePage() {
+  const { t } = useI18n()
+  const [params, setParams] = useSearchParams()
+  const task = (['fibl', 'wfd'].includes(params.get('task') ?? '') ? params.get('task') : 'hiw') as Task
+  return (
+    <div className="space-y-4">
+      <PageHeader title={t('practice.title')} action={<ButtonLink to="/create">＋ {t('nav.create')}</ButtonLink>} />
+      <Segmented
+        value={task}
+        onChange={(v) => setParams(v === 'hiw' ? {} : { task: v }, { replace: true })}
+        options={[
+          { value: 'hiw', label: 'Highlight Incorrect Words' },
+          { value: 'fibl', label: 'Fill in the Blanks' },
+          { value: 'wfd', label: 'Write From Dictation' },
+        ]}
+      />
+      {task === 'hiw' ? <HiwPractice /> : task === 'fibl' ? <FiblPractice /> : <WfdPractice />}
+    </div>
+  )
+}
+
+function ModeToggle({ mode, onChange }: { mode: 'practice' | 'exam'; onChange: (m: 'practice' | 'exam') => void }) {
+  const { t } = useI18n()
+  return (
+    <Segmented
+      value={mode}
+      onChange={onChange}
+      options={[
+        { value: 'practice', label: t('fibl.practice') },
+        { value: 'exam', label: t('fibl.exam') },
+      ]}
+    />
+  )
+}
+
+function FiblPractice() {
+  const { t, tk } = useI18n()
+  const { exercises } = useAppState()
+  const [mode, setMode] = useState<'practice' | 'exam'>('practice')
+  const history = useLiveQuery(() => recentListening('fibl'), [], [])
+  const last = useMemo(() => {
+    const m = new Map<string, { correct: number; total: number; at: number }>()
+    for (const a of history) if (!m.has(a.exerciseId)) m.set(a.exerciseId, { correct: a.correct, total: a.total, at: a.completedAt })
+    return m
+  }, [history])
+  const list = exercises.filter((e) => isHuman(e)).sort((a, b) => (last.get(a.id)?.at ?? 0) - (last.get(b.id)?.at ?? 0) || a.id.localeCompare(b.id))
+  const link = (id: string) => `/fibl/${id}?mode=${mode}`
+  return (
+    <>
+      <Card>
+        <p className="text-sm text-ink-2">{t('fibl.desc')}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <ModeToggle mode={mode} onChange={setMode} />
+          {list[0] && (
+            <ButtonLink variant="primary" to={link(list[0].id)}>
+              {t('practice.startNext')} →
+            </ButtonLink>
+          )}
+        </div>
+        <p className="mt-2 text-xs text-ink-3">{t('fibl.laptopTip')}</p>
+      </Card>
+      <Card title={`${t('practice.exercises')} (${list.length})`}>
+        <ul className="divide-y divide-line">
+          {list.map((e) => {
+            const l = last.get(e.id)
+            return (
+              <li key={e.id}>
+                <Link to={link(e.id)} className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-surface-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-ink">{e.title}</div>
+                    <div className="mt-0.5 text-xs text-ink-3">
+                      {e.topic} · {t('fibl.blankCount', { n: fiblBlanks(e).length })} · {tk(`home.level.${e.difficulty}`)}
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-xs text-ink-3 tabular-nums">{l ? `${l.correct}/${l.total}` : t('practice.never')}</span>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      </Card>
+    </>
+  )
+}
+
+function WfdPractice() {
+  const { t } = useI18n()
+  const { exercises } = useAppState()
+  const [mode, setMode] = useState<'practice' | 'exam'>('practice')
+  const history = useLiveQuery(() => recentListening('wfd', 20), [], [])
+  const total = useMemo(() => extractWfd(exercises).length, [exercises])
+  const done = new Set(history.flatMap((a) => a.items.map((i) => i.ref))).size
+  return (
+    <>
+      <Card>
+        <p className="text-sm text-ink-2">{t('wfd.desc')}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <ModeToggle mode={mode} onChange={setMode} />
+          <ButtonLink variant="primary" to={`/wfd?mode=${mode}`}>
+            {t('wfd.start')} →
+          </ButtonLink>
+        </div>
+        <p className="mt-2 text-xs text-ink-3">{t('wfd.libraryNote', { total, done })}</p>
+      </Card>
+      {history.length > 0 && (
+        <Card title={t('wfd.recent')}>
+          <ul className="divide-y divide-line">
+            {history.slice(0, 10).map((a) => (
+              <li key={a.id}>
+                <Link to={`/listening/${a.id}`} className="-mx-2 flex items-center justify-between rounded-lg px-2 py-2 text-sm hover:bg-surface-2">
+                  <span className="text-ink">{new Date(a.completedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                  <span className="text-ink-2 tabular-nums">
+                    {a.correct}/{a.total} · {Math.round((a.correct / Math.max(1, a.total)) * 100)}%
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+    </>
   )
 }
