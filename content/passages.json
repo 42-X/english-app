@@ -1,0 +1,177 @@
+[
+  {
+    "id": "g01", "kind": "guided", "topic": "astronomy", "difficulty": 1, "voice": "af_heart",
+    "title": "Why galaxies go quiet",
+    "text": "Astronomers have long wondered why some galaxies stop forming new stars while others remain active for billions of years. Recent observations suggest that a supermassive black hole at the centre of a galaxy can heat the surrounding gas, preventing it from cooling and collapsing into new stars. This process, known as feedback, may explain why the largest galaxies in the universe often appear old and quiet."
+  },
+  {
+    "id": "g02", "kind": "guided", "topic": "psychology", "difficulty": 1, "voice": "bf_emma",
+    "title": "Reconstructing memory",
+    "text": "Memory is not a perfect recording of past events. Each time we recall an experience, the brain reconstructs it, and small details can change in the process. Psychologists have shown that simply wording a question differently can alter what witnesses report remembering. For this reason, researchers recommend that interviews with witnesses use open questions and avoid suggesting particular answers."
+  },
+  {
+    "id": "g03", "kind": "guided", "topic": "geology", "difficulty": 1, "voice": "am_michael",
+    "title": "Locating earthquakes",
+    "text": "Earthquakes occur when stress that has built up along a fault is suddenly released. Most of this energy travels through the ground as seismic waves, which scientists measure using sensitive instruments called seismometers. By comparing the arrival times of different waves at several stations, geologists can locate the source of an earthquake within minutes, allowing emergency services to respond more quickly."
+  },
+
+  {
+    "id": "e01", "kind": "easy", "topic": "biology", "difficulty": 1, "voice": "af_heart",
+    "title": "The waggle dance",
+    "text": "Honeybees communicate the location of food through a movement known as the waggle dance. The angle of the dance shows the direction of the flowers relative to the sun, while the [colour|length:semantic] of the dance indicates how far away they are. Remarkably, bees can adjust this information as the sun moves across the sky during the [night|day:semantic]."
+  },
+  {
+    "id": "e02", "kind": "easy", "topic": "education", "difficulty": 1, "voice": "bm_george",
+    "title": "Recorded lectures",
+    "text": "Many universities now record their lectures and make them available online. Supporters argue that recordings help students review difficult material and support those who cannot attend in person. However, some lecturers worry that attendance will [increase|fall:semantic] once recordings are available. Studies so far suggest the effect is small, and that students who watch recordings regularly often achieve [lower|higher:semantic] marks."
+  },
+  {
+    "id": "e03", "kind": "easy", "topic": "climate", "difficulty": 1, "voice": "af_bella",
+    "title": "Glaciers as reservoirs",
+    "text": "Glaciers act as natural reservoirs, storing water as ice during the winter and releasing it gradually through the summer months. In regions such as the Andes and the Himalayas, millions of people depend on this meltwater for drinking and [entertainment|agriculture:semantic]. As temperatures rise, many glaciers are shrinking, which may eventually reduce the supply of water during the driest part of the year."
+  },
+  {
+    "id": "e04", "kind": "easy", "topic": "technology", "difficulty": 1, "voice": "am_michael",
+    "title": "Shrinking computers",
+    "text": "The first commercial computers were large machines that filled entire rooms and required teams of engineers to operate them. Over the following decades, the invention of the transistor and later the microchip allowed computers to become smaller, cheaper and far more [expensive|powerful:semantic]. Today, a typical smartphone contains more processing power than the computers that guided the first astronauts to the [ocean|moon:semantic]."
+  },
+  {
+    "id": "e05", "kind": "easy", "topic": "medicine", "difficulty": 1, "voice": "bf_emma",
+    "title": "Exercise and health",
+    "text": "Regular physical activity is one of the most effective ways to protect long-term health. Even moderate exercise, such as walking for thirty minutes a day, can lower blood pressure and improve sleep. Doctors also note that activity benefits mental health, reducing symptoms of anxiety and [happiness|depression:semantic] in many patients."
+  },
+
+  {
+    "id": "d01", "kind": "drill", "topic": "sociology", "difficulty": 2, "voice": "bf_emma",
+    "title": "Drill · singular / plural",
+    "text": "Over the past century, [city|cities:singular-plural] around the world have grown rapidly as people moved from rural areas in search of work. This shift changed family [structure|structures:singular-plural] and created new social [network|networks:singular-plural], but it also placed pressure on housing, transport and public services."
+  },
+  {
+    "id": "d02", "kind": "drill", "topic": "history", "difficulty": 2, "voice": "am_michael",
+    "title": "Drill · -ed endings",
+    "text": "In the nineteenth century, railways [transform|transformed:ed-ending] the way goods were moved across continents. Merchants who once [rely|relied:ed-ending] on slow river transport could suddenly reach distant markets, and towns that [develop|developed:ed-ending] near stations often grew into important commercial centres."
+  },
+  {
+    "id": "d03", "kind": "drill", "topic": "economics", "difficulty": 2, "voice": "af_heart",
+    "title": "Drill · word families",
+    "text": "Governments often measure [economical|economic:word-family] progress using gross domestic product. Critics argue that this figure ignores the [historic|historical:word-family] costs of environmental damage and fails to capture [industry|industrial:noun-adjective] change in a meaningful way, particularly in countries that rely heavily on natural resources."
+  },
+  {
+    "id": "d04", "kind": "drill", "topic": "psychology", "difficulty": 2, "voice": "bm_george",
+    "title": "Drill · near-sounding words",
+    "text": "Researchers examined how sleep loss can [effect|affect:near-sound] decision making. Participants who slept fewer than five hours were more likely to [except|accept:near-sound] risky offers, and they found it harder to [adapt|adopt:near-sound] new strategies when the rules of the task changed."
+  },
+  {
+    "id": "d05", "kind": "drill", "topic": "architecture", "difficulty": 2, "voice": "af_bella",
+    "title": "Drill · prepositions",
+    "text": "Modern architects increasingly design buildings [in|with:preposition] the local climate in mind. Thick walls can store heat [at|during:preposition] the day and release it at night, while carefully placed windows allow air to flow [over|through:preposition] the rooms, reducing the need for mechanical cooling."
+  },
+  {
+    "id": "d06", "kind": "drill", "topic": "history", "difficulty": 2, "voice": "bm_fable",
+    "title": "Drill · numbers and dates",
+    "text": "The printing press was introduced to Europe around [1460|1450:date], and within fifty years more than [twenty|ten:number] million books had been printed. By the year [1600|1500:date], printing workshops were operating in over two hundred and fifty cities across the continent."
+  },
+  {
+    "id": "d07", "kind": "drill", "topic": "medicine", "difficulty": 2, "voice": "am_michael",
+    "title": "Drill · suffixes",
+    "text": "Antibiotic [resistant|resistance:suffix] is now considered one of the most serious threats to global health. When bacteria are [exposure|exposed:verb-noun] to antibiotics repeatedly, the most [adaptable|adaptive:suffix] strains survive and multiply, making common infections increasingly difficult to treat."
+  },
+  {
+    "id": "d08", "kind": "drill", "topic": "oceanography", "difficulty": 2, "voice": "bf_emma",
+    "title": "Drill · near-synonyms",
+    "text": "Coral reefs cover less than one percent of the ocean floor, yet they [contain|support:semantic] roughly a quarter of all marine species. Rising water temperatures cause corals to [reject|expel:semantic] the algae that live within their tissues, a process that leaves them pale and [weak|vulnerable:semantic]."
+  },
+  {
+    "id": "d09", "kind": "drill", "topic": "linguistics", "difficulty": 2, "voice": "af_heart",
+    "title": "Drill · -ing endings",
+    "text": "Children [learn|learning:ing-ending] a second language often pass through a silent period. During this stage they are [process|processing:ing-ending] the new sounds and patterns, and teachers are encouraged to avoid [force|forcing:ing-ending] them to speak before they are ready."
+  },
+
+  {
+    "id": "o01", "kind": "overclick", "topic": "astronomy", "difficulty": 2, "voice": "bm_george",
+    "title": "Comet tails",
+    "text": "Comets are small icy bodies that travel around the sun in long, elliptical orbits. As a comet approaches the sun, heat causes the ice to turn directly into gas, forming a bright cloud called a coma. Solar wind then pushes this material away, creating a tail that always points away from the sun, regardless of the comet's direction of travel."
+  },
+  {
+    "id": "o02", "kind": "overclick", "topic": "agriculture", "difficulty": 2, "voice": "af_bella",
+    "title": "Drip irrigation",
+    "text": "Farmers in dry regions have adopted a technique called drip irrigation, which delivers small amounts of water directly to the roots of each plant. Compared with traditional flooding methods, drip systems can reduce water use by up to [forty|fifty:number] percent while maintaining similar yields. The main barrier to wider adoption remains the initial cost of the equipment."
+  },
+  {
+    "id": "o03", "kind": "overclick", "topic": "sociology", "difficulty": 2, "voice": "am_michael",
+    "title": "Social media and friendship",
+    "text": "Social media platforms have changed the way people form and maintain friendships. Some researchers believe these tools help individuals stay connected across great distances, while others argue they encourage shallow interactions. A recent study found that people who used social media [actively|passively:semantic], mainly scrolling without posting, reported lower levels of [satisfaction|wellbeing:semantic] than those who engaged directly with friends."
+  },
+  {
+    "id": "o04", "kind": "overclick", "topic": "biology", "difficulty": 2, "voice": "bf_emma",
+    "title": "Bird navigation",
+    "text": "Migratory birds can travel thousands of kilometres without getting lost. Scientists believe they use several sources of information, including the position of the sun, patterns of stars, and the earth's magnetic field. Young birds appear to inherit a basic sense of direction, which they refine through experience during their first journeys."
+  },
+
+  {
+    "id": "rc01", "kind": "recovery", "topic": "history", "difficulty": 3, "voice": "bm_fable",
+    "title": "The Library of Alexandria",
+    "text": "The Great Library of Alexandria, founded in the third century BC, aimed to collect a copy of every book in the known world. Ships arriving in the harbour were searched, and any scrolls found on board were copied by the library's [writers|scribes:semantic]. Scholars such as Euclid and Eratosthenes worked there, and Eratosthenes famously [measured|estimated:semantic] the circumference of the Earth with remarkable accuracy. Contrary to popular belief, the library was not destroyed in a single fire. Instead, it declined gradually over several [decades|centuries:semantic] as funding was reduced and scholars were forced to [leave|flee:semantic] during periods of political conflict."
+  },
+  {
+    "id": "rc02", "kind": "recovery", "topic": "economics", "difficulty": 3, "voice": "af_heart",
+    "title": "The 2008 financial crisis",
+    "text": "In 2008, a crisis that began in the American housing market spread rapidly through the global financial system. Banks had lent large sums to borrowers with poor credit histories, and when house prices began to [rise|fall:semantic], many of these loans could not be repaid. Within months, major institutions in New York, London and Tokyo reported enormous [profits|losses:semantic]. Governments responded by lowering interest rates and providing emergency [loans|funding:semantic] to prevent a complete collapse. Economists still debate whether these measures were [sufficient|effective:semantic]."
+  },
+  {
+    "id": "rc03", "kind": "recovery", "topic": "geology", "difficulty": 3, "voice": "am_michael",
+    "title": "Pinatubo's natural experiment",
+    "text": "Volcanic eruptions can influence the climate far beyond the region where they occur. When Mount Pinatubo erupted in the Philippines in 1991, it released around fifteen million tonnes of sulphur dioxide into the [atmosphere|stratosphere:academic-vocab]. These particles reflected sunlight back into space, and average global temperatures fell by about half a degree Celsius during the following [decade|year:semantic]. Scientists used this natural [event|experiment:semantic] to test computer models of the climate, and the models [predicted|reproduced:semantic] the cooling with impressive accuracy."
+  },
+
+  {
+    "id": "r01", "kind": "realistic", "topic": "biology", "difficulty": 2, "voice": "af_heart",
+    "title": "Tardigrades",
+    "text": "Tardigrades, sometimes called water bears, are microscopic animals known for their extraordinary [resistance|resilience:academic-vocab]. They can survive temperatures close to absolute zero, intense radiation and even the vacuum of space. When conditions become [hostile|harsh:semantic], tardigrades enter a state called cryptobiosis, in which they lose almost all of their body water and their [metabolic|metabolism:word-family] slows to less than one percent of its normal rate. Researchers hope that understanding this process could help scientists [reserve|preserve:near-sound] vaccines and other medicines without [refrigerator|refrigeration:suffix]."
+  },
+  {
+    "id": "r02", "kind": "realistic", "topic": "psychology", "difficulty": 2, "voice": "bm_george",
+    "title": "The marshmallow test",
+    "text": "The so-called marshmallow experiment, conducted at Stanford University in the [1970s|1960s:date], tested whether young children could delay gratification. Children were offered one sweet immediately or two if they waited [alone|patiently:semantic] for about fifteen minutes. Follow-up studies [suggest|suggested:verb-tense] that children who waited longer later achieved better academic results. However, more recent research has questioned this [conclusion|connection:near-sound], showing that family background and economic [circumstance|circumstances:singular-plural] explain much of the difference."
+  },
+  {
+    "id": "r03", "kind": "realistic", "topic": "economics", "difficulty": 2, "voice": "bf_emma",
+    "title": "Automatic enrolment",
+    "text": "Behavioural economists have challenged the traditional assumption that people always make [logical|rational:semantic] financial decisions. For example, many workers fail to save enough for retirement even when their employers offer [general|generous:near-sound] matching contributions. One simple solution has been automatic enrolment, in which employees are [include|included:ed-ending] in a pension scheme unless they actively choose to leave. In countries that adopted this approach, participation rates [raised|rose:verb-tense] dramatically, often to more than [eighty|ninety:number] percent."
+  },
+  {
+    "id": "r04", "kind": "realistic", "topic": "climate", "difficulty": 2, "voice": "am_michael",
+    "title": "Urban heat islands",
+    "text": "Urban areas are often several degrees warmer than the surrounding countryside, a phenomenon known as the urban heat island effect. Dark surfaces such as asphalt and concrete [observe|absorb:near-sound] heat during the day and release it slowly at night. The [lack|loss:semantic] of vegetation also reduces cooling through evaporation. City planners are now experimenting with [reflected|reflective:word-family] roofing materials, street trees and small parks. In one [American|Australian:semantic] city, planting trees along major roads lowered surface temperatures by as much as [twelve|twenty:number] degrees."
+  },
+  {
+    "id": "r05", "kind": "realistic", "topic": "history", "difficulty": 2, "voice": "bm_fable",
+    "title": "The Silk Road",
+    "text": "The Silk Road was not a single route but a [complex|vast:semantic] network of trade paths connecting China with the Mediterranean. Along with silk, merchants carried spices, precious metals and paper, but perhaps the most [importance|important:word-family] goods were ideas. Religions, scientific knowledge and artistic styles [travel|travelled:ed-ending] alongside commercial products. Historians [estimate|argue:semantic] that this exchange played a central role in shaping the [culture|cultures:singular-plural] of both Asia and Europe."
+  },
+  {
+    "id": "r06", "kind": "realistic", "topic": "astronomy", "difficulty": 2, "voice": "af_bella",
+    "title": "Exoplanets",
+    "text": "Exoplanets, planets that orbit stars other than the Sun, were first [confirmed|discovered:semantic] in the 1990s. Since then, astronomers have identified more than five thousand of them, largely thanks to space telescopes that detect tiny [drips|dips:near-sound] in a star's brightness when a planet passes in front of it. Some of these planets lie within their star's habitable zone, where [temperature|temperatures:singular-plural] could allow liquid water to exist. Future missions will [attempt|aim:semantic] to analyse the atmospheres of these planets for [science|signs:near-sound] of life."
+  },
+  {
+    "id": "r07", "kind": "realistic", "topic": "education", "difficulty": 2, "voice": "bf_emma",
+    "title": "Learning vocabulary",
+    "text": "Research on language learning suggests that vocabulary is acquired most effectively through repeated [exposition|exposure:suffix] in meaningful contexts. Learners who encounter a new word several times while reading are more likely to remember it than those who [study|memorise:semantic] lists of definitions. Teachers are therefore encouraged to [provided|provide:ed-ending] extensive reading programmes, in which students choose books slightly below their [actual|current:semantic] level. Such programmes have been shown to improve [writing|reading:semantic] speed as well as overall fluency."
+  },
+  {
+    "id": "r08", "kind": "realistic", "topic": "medicine", "difficulty": 2, "voice": "am_michael",
+    "title": "The gut microbiome",
+    "text": "The human gut contains trillions of [bacterial|bacteria:word-family], collectively known as the microbiome. These microorganisms help digest food, produce certain vitamins and [train|regulate:semantic] the immune system. Scientists have discovered that the [compose|composition:verb-noun] of the microbiome varies greatly between individuals and can be influenced by diet, medication and even the method of [birth|delivery:semantic]. Some researchers [believed|believe:ed-ending] that changes in gut bacteria may contribute to conditions ranging from obesity to depression."
+  },
+  {
+    "id": "r09", "kind": "realistic", "topic": "architecture", "difficulty": 2, "voice": "bm_george",
+    "title": "The first skyscrapers",
+    "text": "Skyscrapers became possible in the late nineteenth century through two key [innovations|inventions:near-sound]: the steel frame and the safety elevator. Before this, the height of buildings was [limiting|limited:ing-ending] by the thickness of the walls needed to support them. Chicago, rebuilt after a great fire in [1881|1871:date], became the testing ground for this new [style|form:semantic] of construction. Today, engineers [face|meet:semantic] different challenges, particularly the effects of wind on very tall structures."
+  },
+  {
+    "id": "r10", "kind": "realistic", "topic": "technology", "difficulty": 2, "voice": "af_heart",
+    "title": "Machine translation",
+    "text": "Machine translation has improved dramatically over the past decade, largely due to the [developments|development:singular-plural] of neural networks trained on vast quantities of text. Modern systems can produce translations that are [fluid|fluent:near-sound] and generally accurate for common language pairs. However, they still [struggled|struggle:ed-ending] with idioms, humour and languages for which little training data is available. Professional translators increasingly [edit|review:semantic] machine output rather than translating every [sentence|document:semantic] from scratch."
+  }
+]

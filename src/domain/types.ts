@@ -1,0 +1,219 @@
+// Core domain model. Pure data — no React, no storage.
+
+export const TRAP_CATEGORIES = [
+  'singular-plural',
+  'verb-tense',
+  'ed-ending',
+  'ing-ending',
+  'function-word',
+  'preposition',
+  'number',
+  'date',
+  'near-sound',
+  'academic-vocab',
+  'word-family',
+  'noun-adjective',
+  'verb-noun',
+  'prefix',
+  'suffix',
+  'semantic',
+  'connected-speech',
+] as const
+export type TrapCategory = (typeof TRAP_CATEGORIES)[number]
+
+/** What the content was written to train. */
+export type ExerciseKind = 'guided' | 'easy' | 'realistic' | 'drill' | 'overclick' | 'recovery'
+
+/** How the learner is practising it. */
+export const MODES = ['guided', 'fading', 'practice', 'drill', 'recovery', 'overclick', 'exam', 'stress', 'review'] as const
+export type Mode = (typeof MODES)[number]
+
+export const SPEEDS = [1, 1.05, 1.1, 1.15, 1.2, 1.3] as const
+export type Speed = (typeof SPEEDS)[number]
+
+export type Accent = 'US' | 'UK' | 'AU' | 'IN' | 'CA' | 'other'
+
+/** exact = word timestamps from the audio source; approximate = estimated. */
+export type TimingQuality = 'exact' | 'approximate'
+
+export type AudioSource = 'tts-timestamped' | 'recorded' | 'browser-tts'
+
+export interface Token {
+  index: number
+  displayText: string
+  spokenText: string
+  /** Media time in ms (playback-rate independent). */
+  startMs: number
+  endMs: number
+  isIncorrect: boolean
+  trapCategory?: TrapCategory
+  /** Punctuation / quotes shown before and after the word; never selectable. */
+  leading: string
+  trailing: string
+  /** Paragraph break after this token. */
+  breakAfter?: boolean
+}
+
+export interface Exercise {
+  id: string
+  title: string
+  topic: string
+  kind: ExerciseKind
+  difficulty: 1 | 2 | 3
+  source: AudioSource
+  audioUrl?: string
+  durationMs: number
+  accent: Accent
+  voice?: string
+  timing: TimingQuality
+  tokens: Token[]
+  tags: string[]
+  /** True for learner-created exercises. */
+  custom?: boolean
+  createdAt?: number
+  updatedAt?: number
+}
+
+export interface TrackingSample {
+  /** Media time ms. */
+  t: number
+  spoken: number
+  /** Pointer token index, or null before the learner has pointed at anything. */
+  pointer: number | null
+}
+
+export interface Interaction {
+  tokenIndex: number
+  action: 'select' | 'deselect'
+  /** Media time ms at the moment of the click. */
+  t: number
+  /** Spoken token index at the click. */
+  spoken: number
+}
+
+export type Confidence = 'high' | 'medium' | 'guess'
+
+export interface Attempt {
+  id: string
+  exerciseId: string
+  mode: Mode
+  speed: number
+  timing: TimingQuality
+  startedAt: number
+  completedAt: number
+  /** Final selected token indexes. */
+  selected: number[]
+  interactions: Interaction[]
+  samples: TrackingSample[]
+  /** Media times of recovery-training blackouts [start, end]. */
+  blackouts: [number, number][]
+  confidence: Record<number, Confidence>
+  planId?: string
+  /** Denormalised summary so lists/dashboards don't recompute. */
+  summary: AttemptSummary
+  updatedAt: number
+}
+
+export interface ScoreResult {
+  hits: number
+  falsePositives: number
+  misses: number
+  mismatches: number
+  selections: number
+  /** Floored at 0 — the simulated question score. */
+  net: number
+  /** Unfloored hits − false positives. */
+  rawNet: number
+  precision: number | null
+  recall: number | null
+  falsePositiveRate: number
+}
+
+export interface SyncMetrics {
+  /** Share of samples that had a pointer position. */
+  coverage: number
+  within1: number
+  within2: number
+  behind3: number
+  ahead3: number
+  avgLag: number
+  medianLag: number
+  maxBehind: number
+  lossEvents: number
+  avgRecoveryMs: number | null
+  longestRecoveryMs: number | null
+}
+
+export interface AttemptSummary {
+  score: ScoreResult
+  sync: SyncMetrics | null
+  avgLatencyMs: number | null
+  lateClicks: number
+  missesDuringLoss: number
+  missesWhileSynced: number
+  trapMisses: Partial<Record<TrapCategory, number>>
+  trapTotals: Partial<Record<TrapCategory, number>>
+  accent: Accent
+  kind: ExerciseKind
+}
+
+export interface MistakeItem {
+  id: string
+  type: 'miss' | 'false-positive'
+  display: string
+  spoken: string
+  trapCategory?: TrapCategory
+  exerciseId: string
+  tokenIndex: number
+  context: string
+  createdAt: number
+  /** 0..4; 4 = mastered. */
+  step: number
+  dueAt: number
+  lapses: number
+  lastReviewedAt?: number
+  updatedAt: number
+}
+
+export interface PlanItem {
+  exerciseId: string
+  mode: Mode
+  speed: number
+  block: 'warmup' | 'drill' | 'realistic' | 'review'
+  reason: string
+  attemptId?: string
+}
+
+export interface DailyPlan {
+  id: string
+  date: string
+  focus: Focus[]
+  items: PlanItem[]
+  createdAt: number
+  updatedAt: number
+}
+
+export type Focus =
+  | { type: 'tracking' }
+  | { type: 'overclicking' }
+  | { type: 'discrimination' }
+  | { type: 'latency' }
+  | { type: 'trap'; category: TrapCategory }
+  | { type: 'baseline' }
+
+export interface FadingConfig {
+  /** Fraction of the passage with full current-word highlight. */
+  full: number
+  /** Fraction with only a subtle line cue. Remainder has none. */
+  line: number
+}
+
+export interface Settings {
+  language: 'zh-TW' | 'en'
+  theme: 'system' | 'light' | 'dark'
+  speed: number
+  fading: FadingConfig
+  liveCoaching: boolean
+  examCountdownSec: number
+  updatedAt: number
+}
