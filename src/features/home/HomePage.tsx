@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppState } from '../../app/state'
 import { db } from '../../data/db'
-import { isOnboarded, liveMistakes, markOnboarded, recentAttempts, startOverclickTest, todaysPlan } from '../../data/repo'
+import { extendPlan, isOnboarded, liveMistakes, liveVocab, markOnboarded, recentAttempts, startOverclickTest, todaysPlan } from '../../data/repo'
 import { requestSync } from '../../data/sync'
-import { speedAdvice, targetLevel } from '../../domain/adaptive'
+import { isHiwAttempt, speedAdvice, targetLevel, weaknesses } from '../../domain/adaptive'
 import { focusCoaching, speedCoaching } from '../../domain/coaching'
 import { estimatedMinutes, localDate } from '../../domain/plan'
 import { isDue } from '../../domain/srs'
@@ -15,6 +15,8 @@ import { speedLabel } from '../../ui/format'
 import { Button, ButtonLink, Card, CoachLine, PageHeader } from '../../ui/kit'
 
 const BLOCKS: PlanItem['block'][] = ['warmup', 'drill', 'realistic', 'review']
+/** Scored questions needed before the personal focus appears (mirrors `weaknesses`). */
+const BASELINE = 3
 
 export function HomePage() {
   const { exercises, exerciseById, settings, ready } = useAppState()
@@ -40,38 +42,32 @@ export function HomePage() {
 
   const attempts = useLiveQuery(() => recentAttempts(60), [], [])
   const mistakes = useLiveQuery(() => liveMistakes(), [], [])
+  const vocab = useLiveQuery(() => liveVocab(), [], [])
   const onboarded = useLiveQuery(() => isOnboarded(), [], true)
   const due = mistakes.filter((m) => isDue(m, Date.now())).length
   const advice = speedAdvice(attempts, settings.speed)
+  const speedLine = speedCoaching(advice)
   const level = targetLevel(attempts)
+  // Live, not frozen at plan creation: updates as soon as she finishes a question.
+  const focus = weaknesses(attempts)
+  const scored = attempts.filter(isHiwAttempt).length
 
   const startTest = async () => {
     const test = await startOverclickTest(exercises)
     if (!test) return setTestError(true)
-    const first = test.items[0]
-    navigate(`${playLink(first, test)}&flow=test`)
+    navigate(`${playLink(test.items[0], test)}&flow=test`)
   }
-  const speedLine = speedCoaching(advice)
 
   if (!ready || !plan) return <p className="p-6 text-ink-2">{t('common.loading')}</p>
 
   const next = plan.items.find((i) => !i.attemptId)
+  const nextEx = next ? exerciseById.get(next.exerciseId) : undefined
   const doneCount = plan.items.filter((i) => i.attemptId).length
   const dateLabel = new Date().toLocaleDateString(lang, { weekday: 'long', month: 'long', day: 'numeric' })
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        title={t('home.title')}
-        sub={`${dateLabel} · ${t('common.minutes', { n: estimatedMinutes(plan, exerciseById) })} · ${doneCount}/${plan.items.length} · ${t('home.level')}: ${tk(`home.level.${level}`)}`}
-        action={
-          next ? (
-            <ButtonLink variant="primary" className="py-2.5" to={playLink(next, plan)}>
-              {doneCount ? t('common.continue') : t('home.startNext')} →
-            </ButtonLink>
-          ) : undefined
-        }
-      />
+      <PageHeader title={t('home.title')} sub={`${dateLabel} · ${t('common.minutes', { n: estimatedMinutes(plan, exerciseById) })}`} />
 
       {!onboarded && (
         <Card title={t('home.howTitle')} action={<Button variant="ghost" onClick={() => void markOnboarded()}>{t('home.dismiss')}</Button>}>
@@ -82,27 +78,59 @@ export function HomePage() {
         </Card>
       )}
 
-      <Card title={t('home.focusTitle')}>
-        <div className="space-y-2">
-          {plan.focus.map((f, i) => {
-            const c = focusCoaching(f)
-            return (
-              <CoachLine key={i} tone={c.tone}>
-                {coach(c.key, c.params)}
-              </CoachLine>
-            )
-          })}
+      {/* Progress + the one obvious next step */}
+      <Card>
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium text-ink">{t('home.progress', { done: doneCount, total: plan.items.length })}</span>
+          <span className="text-ink-3">
+            {t('home.level')}: {tk(`home.level.${level}`)}
+          </span>
         </div>
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
+          <div className="h-full rounded-full bg-accent transition-[width]" style={{ width: `${(doneCount / Math.max(1, plan.items.length)) * 100}%` }} />
+        </div>
+        {next ? (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-xs text-ink-3">{t('home.upNext', { n: plan.items.indexOf(next) + 1 })}</div>
+              <div className="truncate font-medium text-ink">
+                {nextEx?.title} · <span className="text-ink-2">{tk(`mode.${next.mode}`)}</span>
+              </div>
+            </div>
+            <ButtonLink variant="primary" className="py-2.5" to={playLink(next, plan)}>
+              {doneCount ? t('common.continue') : t('home.startNext')} →
+            </ButtonLink>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-3">
+            <CoachLine tone="good">{t('home.allDone')}</CoachLine>
+            <div className="flex flex-wrap gap-2">
+              <ButtonLink variant="primary" to={`/report/${plan.id}`}>
+                {t('report.day.open')} →
+              </ButtonLink>
+              <Button onClick={() => void extendPlan(plan.id, exercises, settings.speed).then(requestSync)}>＋ {t('home.addMore')}</Button>
+            </div>
+          </div>
+        )}
       </Card>
 
-      {!next && (
-        <Card>
-          <CoachLine tone="good">{t('home.allDone')}</CoachLine>
-          <ButtonLink variant="primary" className="mt-3" to={`/report/${plan.id}`}>
-            {t('report.day.open')} →
-          </ButtonLink>
-        </Card>
-      )}
+      <Card title={t('home.focusTitle')}>
+        {focus[0]?.type === 'baseline' ? (
+          <CoachLine tone="info">{t('home.baselineNeeded', { n: Math.max(1, BASELINE - scored) })}</CoachLine>
+        ) : (
+          <div className="space-y-2">
+            {focus.length === 0 && <CoachLine tone="good">{t('home.noWeakness')}</CoachLine>}
+            {focus.map((f, i) => {
+              const c = focusCoaching(f)
+              return (
+                <CoachLine key={i} tone={c.tone}>
+                  {coach(c.key, c.params)}
+                </CoachLine>
+              )
+            })}
+          </div>
+        )}
+      </Card>
 
       <div className="space-y-3">
         {BLOCKS.map((block) => {
@@ -110,6 +138,7 @@ export function HomePage() {
           if (!items.length) return null
           return (
             <Card key={block} title={t(`home.block.${block}`)}>
+              <p className="-mt-1 mb-2 text-xs text-ink-3">{t(`home.blockWhy.${block}`)}</p>
               <ol className="divide-y divide-line">
                 {items.map((item, idx) => {
                   const ex = exerciseById.get(item.exerciseId)
@@ -151,23 +180,34 @@ export function HomePage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
+        <Card title={t('nav.review')}>
+          <p className="text-sm text-ink-2">{mistakes.length ? t('home.bank', { n: mistakes.length, due }) : t('home.bankEmpty')}</p>
+          <p className="mt-1 text-sm text-ink-2">{t('home.words', { n: vocab.length, known: vocab.filter((v) => v.status === 'known').length })}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {mistakes.length > 0 && (
+              <ButtonLink variant={due ? 'primary' : 'secondary'} to="/review/quick">
+                {t('mistakes.quickReview')} →
+              </ButtonLink>
+            )}
+            <ButtonLink to="/mistakes?tab=words">{t('review.tab.words')}</ButtonLink>
+          </div>
+        </Card>
         <Card title={t('home.speedTitle')}>
           <p className="mb-2 text-sm text-ink-3">
             {t('speed.current')}: <span className="font-medium text-ink">{speedLabel(settings.speed)}</span>
           </p>
+          {advice.kind === 'not-enough-data' && (
+            <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
+              <div className="h-full rounded-full bg-accent" style={{ width: `${(advice.have / advice.need) * 100}%` }} />
+            </div>
+          )}
           <CoachLine tone={speedLine.tone}>{coach(speedLine.key, speedLine.params)}</CoachLine>
-        </Card>
-        <Card title={t('nav.mistakes')}>
-          <p className="mb-3 text-sm text-ink-2">{due ? t('home.dueMistakes', { n: due }) : t('home.noDue')}</p>
-          <ButtonLink to="/mistakes" variant={due ? 'primary' : 'secondary'}>
-            {t('mistakes.title')} →
-          </ButtonLink>
         </Card>
       </div>
 
       <Card title={t('home.testTitle')}>
         <p className="mb-3 text-sm text-ink-2">{t('home.testDesc')}</p>
-        <Button variant={plan.focus.some((f) => f.type === 'overclicking' || f.type === 'baseline') ? 'primary' : 'secondary'} onClick={() => void startTest()}>
+        <Button variant={focus.some((f) => f.type === 'overclicking') ? 'primary' : 'secondary'} onClick={() => void startTest()}>
           {t('home.testStart')} →
         </Button>
         {testError && <p className="mt-2 text-sm text-bad">{t('home.testNotEnough')}</p>}

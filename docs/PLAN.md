@@ -145,6 +145,12 @@ start in every mode; Next directly under the passage; volume control; phone auto
 - [ ] Accent labels for human recordings where the reader's accent can be determined (not reliably possible from metadata; left as "other")
 - [ ] Real-phone test (iPhone Safari + installed app): audio start, finger tracking, update applies
 
+### Learner feedback round 2 (2026-10-06)
+- [x] Today: focus updates live (was frozen at plan creation → "not enough data" all day); explains exactly how many scored questions are still needed; progress bar + "up next"; "Add 3 more" when done
+- [x] Mistake bank records misses from the fading warm-up too; Today shows bank size, not just due count
+- [x] Quick review flashcards with audio replay and self-grading
+- [x] My words: look up any word, definitions + pronunciation + Chinese dictionary link, learned count and milestones, synced
+
 ### P1 — soon after
 - [ ] FIB-L trainer (same audio + timestamp engine; type the missing words, spelling-aware scoring)
 - [ ] Mistake-bank generated examples (new sentences per confusion pair, synthesised offline)

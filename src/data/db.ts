@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Attempt, DailyPlan, Exercise, MistakeItem, Settings } from '../domain/types'
+import type { Attempt, DailyPlan, Exercise, MistakeItem, Settings, VocabEntry } from '../domain/types'
 
 /** Every synced record carries a dirty flag (1 = not yet pushed) and an optional tombstone. */
 export interface SyncFields {
@@ -12,6 +12,7 @@ export type MistakeRow = MistakeItem & SyncFields
 export type PlanRow = DailyPlan & SyncFields
 export type CustomExerciseRow = Exercise & SyncFields
 export type SettingsRow = Settings & SyncFields & { id: 'settings' }
+export type VocabRow = VocabEntry & SyncFields
 
 export interface MetaRow {
   key: string
@@ -31,6 +32,7 @@ export const db = new Dexie('hiw-trainer') as Dexie & {
   settings: EntityTable<SettingsRow, 'id'>
   meta: EntityTable<MetaRow, 'key'>
   audio: EntityTable<AudioBlobRow, 'id'>
+  vocab: EntityTable<VocabRow, 'id'>
 }
 
 db.version(1).stores({
@@ -43,7 +45,12 @@ db.version(1).stores({
   audio: 'id',
 })
 
-export const SYNCED_TABLES = ['attempts', 'mistakes', 'plans', 'customExercises', 'settings'] as const
+// v2: "My words" vocabulary list.
+db.version(2).stores({
+  vocab: 'id, status, addedAt, dirty',
+})
+
+export const SYNCED_TABLES = ['attempts', 'mistakes', 'plans', 'customExercises', 'settings', 'vocab'] as const
 export type SyncedTable = (typeof SYNCED_TABLES)[number]
 
 export async function getMeta<T>(key: string): Promise<T | undefined> {

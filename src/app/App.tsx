@@ -5,6 +5,7 @@ import { startAutoSync } from '../data/sync'
 import { CreatePage } from '../features/create/CreatePage'
 import { HomePage } from '../features/home/HomePage'
 import { MistakesPage } from '../features/mistakes/MistakesPage'
+import { QuickReview } from '../features/mistakes/QuickReview'
 import { PlayerPage } from '../features/player/PlayerPage'
 import { PracticePage } from '../features/practice/PracticePage'
 import { ProgressPage } from '../features/progress/ProgressPage'
@@ -47,6 +48,7 @@ function Localized() {
             <Route path="/results/:id" element={<ResultsPage />} />
             <Route path="/report/:id" element={<ReportPage />} />
             <Route path="/mistakes" element={<MistakesPage />} />
+            <Route path="/review/quick" element={<QuickReview />} />
             <Route path="/progress" element={<ProgressPage />} />
             <Route path="/create" element={<CreatePage />} />
             <Route path="/settings" element={<SettingsPage />} />
@@ -61,7 +63,7 @@ function Localized() {
 const NAV: { to: string; key: StringKey; icon: string }[] = [
   { to: '/', key: 'nav.today', icon: '◎' },
   { to: '/practice', key: 'nav.practice', icon: '▶' },
-  { to: '/mistakes', key: 'nav.mistakes', icon: '✎' },
+  { to: '/mistakes', key: 'nav.review', icon: '✎' },
   { to: '/progress', key: 'nav.progress', icon: '↗' },
   { to: '/settings', key: 'nav.settings', icon: '⚙' },
 ]

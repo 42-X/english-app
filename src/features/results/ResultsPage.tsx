@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAppState } from '../../app/state'
 import { playSnippet, stopSnippet } from '../../audio/engine'
@@ -14,6 +14,8 @@ import { useCoachText, useI18n } from '../../i18n'
 import { pct, secs, signed, speedLabel } from '../../ui/format'
 import { Badge, Button, ButtonLink, Card, CoachLine, Stat } from '../../ui/kit'
 import { Timeline } from './Timeline'
+import { WordSheet, type WordTarget } from '../vocab/WordSheet'
+import { contextAround } from '../../domain/analysis'
 
 export function ResultsPage() {
   const { id = '' } = useParams()
@@ -38,6 +40,10 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
   const approx = attempt.timing !== 'exact'
 
   useEffect(() => stopSnippet, [])
+  const [wordTarget, setWordTarget] = useState<WordTarget | null>(null)
+  /** Open the word sheet for the word actually spoken at this position. */
+  const openWord = (tok: Token) =>
+    setWordTarget({ word: tok.spokenText, exerciseId: ex.id, tokenIndex: tok.index, context: sentenceAround(ex, tok.index) })
 
   const plan = useLiveQuery(() => (attempt.planId ? db.plans.get(attempt.planId) : undefined), [attempt.planId])
   const nextItem = plan?.items.find((i) => !i.attemptId)
@@ -172,7 +178,12 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
                     <LagText lag={r.lag} />
                   </span>
                 </div>
-                <Replay ex={ex} index={r.token.index} />
+                <div className="flex items-center gap-1">
+                  <Replay ex={ex} index={r.token.index} />
+                  <Button className="px-2.5 py-1 text-xs" onClick={() => openWord(r.token)} aria-label={t('vocab.lookUp')} title={t('vocab.lookUp')}>
+                    📖
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
@@ -231,7 +242,8 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
       )}
 
       <Card title={t('results.transcript')}>
-        <ReviewTranscript ex={ex} decorate={guided ? () => undefined : decorate} />
+        <p className="mb-2 text-xs text-ink-3">{t('vocab.tapHint')}</p>
+        <ReviewTranscript ex={ex} decorate={guided ? () => undefined : decorate} onWord={openWord} />
       </Card>
 
       {ex.credit && (
@@ -269,8 +281,22 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
           </ButtonLink>
         )}
       </div>
+      {wordTarget && <WordSheet target={wordTarget} onClose={() => setWordTarget(null)} />}
     </div>
   )
+}
+
+function sentenceAround(ex: Exercise, index: number): string {
+  // Expand to sentence boundaries (punctuation) within ±25 words, falling back to a short window.
+  let a = index
+  while (a > 0 && index - a < 25 && !/[.!?]/.test(ex.tokens[a - 1].trailing)) a--
+  let b = index
+  while (b < ex.tokens.length - 1 && b - index < 25 && !/[.!?]/.test(ex.tokens[b].trailing)) b++
+  if (b - a > 40) return contextAround(ex.tokens, index, 8).replace(/[[\]]/g, '')
+  return ex.tokens
+    .slice(a, b + 1)
+    .map((t) => `${t.leading}${t.spokenText}${t.trailing}`)
+    .join(' ')
 }
 
 function CauseBadges({ causes }: { causes: Cause[] }) {
@@ -306,13 +332,19 @@ export function Replay({ ex, index }: { ex: Exercise; index: number }) {
   )
 }
 
-function ReviewTranscript({ ex, decorate }: { ex: Exercise; decorate: (t: Token) => string | undefined }) {
+function ReviewTranscript({ ex, decorate, onWord }: { ex: Exercise; decorate: (t: Token) => string | undefined; onWord: (t: Token) => void }) {
   return (
     <p className="transcript-training text-[1.05rem]! leading-[2.2]!">
       {ex.tokens.map((tok) => (
         <span key={tok.index}>
           {tok.leading}
-          <span className={`word ${decorate(tok) ?? ''}`}>
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={() => onWord(tok)}
+            onKeyDown={(e) => e.key === 'Enter' && onWord(tok)}
+            className={`word cursor-pointer hover:underline ${decorate(tok) ?? ''}`}
+          >
             {tok.displayText}
             {tok.isIncorrect && <sup className="ml-0.5 text-[0.7em] text-ink-2">{tok.spokenText}</sup>}
           </span>

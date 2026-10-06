@@ -20,7 +20,8 @@ daily practice to it.
 | Diagnostics | ±1/±2 sync, lag, sync-loss events and recovery time, click latency buckets, per-mismatch "likely cause" (lost sync vs trap type vs late response vs position slip), timeline, snippet replay at 0.8/1.0/1.1× |
 | Adaptive | Rolling weakness detection → daily 15–25 min plan (warm-up → weak drills → realistic → review → summary). Difficulty levels (easier / exam standard / advanced) by speaking rate and length: drops while sync or precision is weak, rises after 20 stable passages. Speed rises only after stable quality and drops back if quality falls |
 | Reports | End-of-day summary (what improved vs the previous 7 days, what cost the most points, tomorrow's focus) · rolling written diagnosis on Progress |
-| Mistake bank | Misses and false clicks, spaced review at 10 min → 1 day → 3 days → 7 days, reviewed with *different* passages of the same confusion |
+| Mistake bank | Every missed or wrongly-clicked word (any mode with clickable words), spaced review at 10 min → 1 day → 3 days → 7 days. Quick review flashcards replay each word's audio clip; full-passage review uses *different* passages with the same confusion |
+| My words | Tap any word on a results page → definition (Free Dictionary API, Wiktionary fallback — only the word is sent), pronunciation, Cambridge 英漢（繁）link, add to a personal list with learned count and milestones; synced across devices |
 | Content | **28 human-voice items**: excerpts of Spoken Wikipedia recordings (real readers, varied accents, CC BY-SA), word-timed with Whisper, swaps written by hand · plus 34 original passages voiced with Kokoro TTS. Mismatch counts vary 0–7 per item. No Pearson material |
 | Custom | Paste displayed + spoken text → mismatches auto-detected and categorised; browser voice (approximate) or uploaded audio (+ optional timestamps) |
 

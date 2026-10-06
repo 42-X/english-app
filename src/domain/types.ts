@@ -240,3 +240,22 @@ export interface Settings {
   countdownSec: number
   updatedAt: number
 }
+
+/** A word the learner saved to "My words". */
+export interface VocabEntry {
+  /** Lower-cased headword. */
+  id: string
+  word: string
+  phonetic?: string
+  /** Pronunciation audio from the dictionary, when available. */
+  audioUrl?: string
+  meanings: { partOfSpeech: string; definition: string; example?: string }[]
+  /** The sentence she met it in. */
+  context?: string
+  exerciseId?: string
+  tokenIndex?: number
+  status: 'learning' | 'known'
+  addedAt: number
+  knownAt?: number
+  updatedAt: number
+}

@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAppState } from '../../app/state'
 import { deleteMistake, liveMistakes, recentAttempts } from '../../data/repo'
 import { requestSync } from '../../data/sync'
@@ -8,7 +9,10 @@ import { isDue, MASTERED } from '../../domain/srs'
 import type { Exercise, MistakeItem, TrapCategory } from '../../domain/types'
 import { useI18n } from '../../i18n'
 import { durationText } from '../../ui/format'
-import { Badge, Button, ButtonLink, Card, PageHeader } from '../../ui/kit'
+import { Badge, Button, ButtonLink, Card, PageHeader, Segmented } from '../../ui/kit'
+import { VocabList } from '../vocab/VocabList'
+import { WordSheet, type WordTarget } from '../vocab/WordSheet'
+import { liveVocab } from '../../data/repo'
 import { Replay } from '../results/ResultsPage'
 
 /** Pick a review exercise: same confusion, preferably a different passage, least recently used. */
@@ -26,8 +30,31 @@ function pickReview(due: MistakeItem[], exercises: Exercise[], lastDone: Map<str
 }
 
 export function MistakesPage() {
+  const { t } = useI18n()
+  const [params, setParams] = useSearchParams()
+  const tab = params.get('tab') === 'words' ? 'words' : 'mistakes'
+  const mistakes = useLiveQuery(() => liveMistakes(), [], [])
+  const vocab = useLiveQuery(() => liveVocab(), [], [])
+  return (
+    <div className="space-y-4">
+      <PageHeader title={t('review.title')} />
+      <Segmented
+        value={tab}
+        onChange={(v) => setParams(v === 'words' ? { tab: 'words' } : {}, { replace: true })}
+        options={[
+          { value: 'mistakes', label: `${t('review.tab.mistakes')} (${mistakes.length})` },
+          { value: 'words', label: `${t('review.tab.words')} (${vocab.length})` },
+        ]}
+      />
+      {tab === 'words' ? <VocabList /> : <MistakeBank />}
+    </div>
+  )
+}
+
+function MistakeBank() {
   const { exercises, exerciseById, settings } = useAppState()
   const { t, tk, lang } = useI18n()
+  const [wordTarget, setWordTarget] = useState<WordTarget | null>(null)
   const mistakes = useLiveQuery(() => liveMistakes(), [], [])
   const attempts = useLiveQuery(() => recentAttempts(100), [], [])
   const now = Date.now()
@@ -59,17 +86,22 @@ export function MistakesPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        title={t('mistakes.title')}
-        sub={t('mistakes.schedule')}
-        action={
-          review ? (
-            <ButtonLink variant={due.length ? 'primary' : 'secondary'} to={`/play/${review.id}?mode=review&speed=${settings.speed}`}>
-              {t('mistakes.startReview')} {due.length ? `(${t('mistakes.due', { n: due.length })})` : ''}
+      {mistakes.length > 0 && (
+        <Card>
+          <p className="text-sm text-ink-2">{t('mistakes.howItWorks', { n: mistakes.length, due: due.length })}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <ButtonLink variant="primary" to="/review/quick">
+              {t('mistakes.quickReview')} →
             </ButtonLink>
-          ) : undefined
-        }
-      />
+            {review && (
+              <ButtonLink to={`/play/${review.id}?mode=review&speed=${settings.speed}`}>
+                {t('mistakes.startReview')}
+              </ButtonLink>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-ink-3">{t('mistakes.schedule')}</p>
+        </Card>
+      )}
 
       {mistakes.length === 0 && (
         <Card>
@@ -118,6 +150,14 @@ export function MistakesPage() {
                     </div>
                   </div>
                   {ex && <Replay ex={ex} index={m.tokenIndex} />}
+                  <Button
+                    className="px-2.5 py-1 text-xs"
+                    title={t('vocab.lookUp')}
+                    aria-label={t('vocab.lookUp')}
+                    onClick={() => setWordTarget({ word: m.spoken, context: m.context.replace(/[[\]]/g, ''), exerciseId: m.exerciseId, tokenIndex: m.tokenIndex })}
+                  >
+                    📖
+                  </Button>
                   <Button variant="ghost" className="px-2 text-xs" onClick={() => void deleteMistake(m.id).then(requestSync)} aria-label={t('common.delete')}>
                     ✕
                   </Button>
@@ -142,6 +182,7 @@ export function MistakesPage() {
           )}
         </Card>
       ))}
+      {wordTarget && <WordSheet target={wordTarget} onClose={() => setWordTarget(null)} />}
     </div>
   )
 }

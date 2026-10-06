@@ -1,0 +1,135 @@
+import { useLiveQuery } from 'dexie-react-hooks'
+import { useEffect, useState } from 'react'
+import { db } from '../../data/db'
+import { lookupWord, saveWord, setWordStatus } from '../../data/repo'
+import { requestSync } from '../../data/sync'
+import { headword, type DictionaryResult } from '../../domain/vocab'
+import { useI18n } from '../../i18n'
+import { Badge, Button } from '../../ui/kit'
+
+export interface WordTarget {
+  word: string
+  context?: string
+  exerciseId?: string
+  tokenIndex?: number
+}
+
+/** Speak a word: dictionary recording when available, otherwise the device's English voice. */
+export function pronounce(word: string, audioUrl?: string): void {
+  if (audioUrl) {
+    void new Audio(audioUrl).play().catch(() => speak(word))
+    return
+  }
+  speak(word)
+}
+
+function speak(word: string): void {
+  if (!('speechSynthesis' in window)) return
+  const u = new SpeechSynthesisUtterance(word)
+  u.lang = 'en-GB'
+  u.rate = 0.85
+  speechSynthesis.cancel()
+  speechSynthesis.speak(u)
+}
+
+export function chineseDictionaryUrl(word: string): string {
+  return `https://dictionary.cambridge.org/dictionary/english-chinese-traditional/${encodeURIComponent(headword(word))}`
+}
+
+/** Bottom sheet with a word's pronunciation, definitions and "Add to My words". */
+export function WordSheet({ target, onClose }: { target: WordTarget; onClose: () => void }) {
+  const { t } = useI18n()
+  const id = headword(target.word)
+  const [dict, setDict] = useState<DictionaryResult | null | 'offline' | undefined>(undefined)
+  const saved = useLiveQuery(() => db.vocab.get(id), [id])
+  const inList = !!saved && !saved.deleted
+
+  useEffect(() => {
+    let live = true
+    void lookupWord(id).then((r) => live && setDict(r))
+    return () => {
+      live = false
+    }
+  }, [id])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const add = async () => {
+    await saveWord(id, { context: target.context, exerciseId: target.exerciseId, tokenIndex: target.tokenIndex }, dict && dict !== 'offline' ? dict : null)
+    requestSync()
+  }
+
+  const info = dict && dict !== 'offline' ? dict : null
+  return (
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose} role="presentation">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={target.word}
+        className="max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-semibold text-ink">{info?.word || id}</h2>
+            {info?.phonetic && <div className="text-sm text-ink-2">{info.phonetic}</div>}
+          </div>
+          <Button variant="ghost" className="px-2" onClick={onClose} aria-label={t('common.close')}>
+            ✕
+          </Button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button className="px-3 py-1.5" onClick={() => pronounce(id, info?.audioUrl)}>
+            🔊 {t('vocab.pronounce')}
+          </Button>
+          <a className="inline-flex items-center rounded-lg border border-line px-3 py-1.5 text-sm text-ink-2 hover:bg-surface-2" href={chineseDictionaryUrl(id)} target="_blank" rel="noreferrer">
+            中文 ↗
+          </a>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {dict === undefined && <p className="text-sm text-ink-3">{t('common.loading')}</p>}
+          {dict === 'offline' && <p className="text-sm text-ink-2">{t('vocab.offline')}</p>}
+          {dict === null && <p className="text-sm text-ink-2">{t('vocab.notFound')}</p>}
+          {info?.meanings.map((m, i) => (
+            <div key={i}>
+              <div className="text-xs font-medium tracking-wide text-ink-3 uppercase">{m.partOfSpeech}</div>
+              <p className="text-sm leading-relaxed text-ink">{m.definition}</p>
+              {m.example && <p className="text-sm text-ink-2 italic">“{m.example}”</p>}
+            </div>
+          ))}
+          {target.context && (
+            <div className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-ink-2">
+              <div className="mb-0.5 text-xs text-ink-3">{t('vocab.inContext')}</div>
+              {target.context}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          {!inList ? (
+            <Button variant="primary" onClick={() => void add()} disabled={dict === undefined}>
+              ＋ {t('vocab.add')}
+            </Button>
+          ) : (
+            <>
+              <Badge tone="good">✓ {t('vocab.inList')}</Badge>
+              {saved.status === 'learning' ? (
+                <Button className="px-3 py-1.5" onClick={() => void setWordStatus(id, 'known').then(requestSync)}>
+                  {t('vocab.markKnown')}
+                </Button>
+              ) : (
+                <Badge tone="accent">{t('vocab.known')}</Badge>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

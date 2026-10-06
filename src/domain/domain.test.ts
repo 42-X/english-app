@@ -437,3 +437,48 @@ describe('reports', () => {
     expect(lines[0]).toMatchObject({ key: 'diag.catchAndFalse', params: { recall: 100, fp: 0, rTrend: ' (+67)' } })
   })
 })
+
+describe('vocabulary', () => {
+  it('normalises headwords', async () => {
+    const { headword } = await import('./vocab')
+    expect(headword('“Resilience,”')).toBe('resilience')
+    expect(headword("Earth's")).toBe("earth's")
+    expect(headword('long-term.')).toBe('long-term')
+  })
+  it('parses a dictionary response, capping definitions', async () => {
+    const { parseDictionary } = await import('./vocab')
+    const r = parseDictionary([
+      {
+        word: 'resilience',
+        phonetics: [{ text: '/rɪˈzɪliəns/' }, { audio: 'https://x/resilience.mp3' }],
+        meanings: [
+          { partOfSpeech: 'noun', definitions: [{ definition: 'The ability to recover quickly.', example: 'the resilience of the economy' }, { definition: 'Elasticity.' }, { definition: 'Third one.' }] },
+        ],
+      },
+    ])!
+    expect(r.phonetic).toBe('/rɪˈzɪliəns/')
+    expect(r.audioUrl).toBe('https://x/resilience.mp3')
+    expect(r.meanings).toHaveLength(2)
+    expect(r.meanings[0]).toMatchObject({ partOfSpeech: 'noun', example: 'the resilience of the economy' })
+  })
+  it('returns null for "no definitions found"', async () => {
+    const { parseDictionary } = await import('./vocab')
+    expect(parseDictionary({ title: 'No Definitions Found' })).toBeNull()
+  })
+  it('finds the next milestone', async () => {
+    const { nextMilestone } = await import('./vocab')
+    expect(nextMilestone(0)).toBe(5)
+    expect(nextMilestone(25)).toBe(50)
+  })
+})
+
+describe('wiktionary fallback', () => {
+  it('parses definitions and strips markup', async () => {
+    const { parseWiktionary } = await import('./vocab')
+    const r = parseWiktionary('awareness', {
+      en: [{ partOfSpeech: 'Noun', definitions: [{ definition: 'The state of <a href="/wiki/consciousness">consciousness</a> &amp; perception.', examples: ['<i>public</i> awareness'] }, { definition: '' }] }],
+    })!
+    expect(r.meanings).toEqual([{ partOfSpeech: 'noun', definition: 'The state of consciousness & perception.', example: 'public awareness' }])
+    expect(parseWiktionary('x', { fr: [] })).toBeNull()
+  })
+})
