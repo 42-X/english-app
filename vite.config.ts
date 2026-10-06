@@ -12,9 +12,9 @@ export default defineConfig({
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'HIW Trainer · PTE Highlight Incorrect Words',
-        short_name: 'HIW 訓練',
+        short_name: 'HIW Trainer',
         description: 'PTE Highlight Incorrect Words trainer: tracking, scoring and adaptive practice.',
-        lang: 'zh-TW',
+        lang: 'en',
         start_url: '/',
         display: 'standalone',
         background_color: '#f7f7f5',

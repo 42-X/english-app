@@ -6,7 +6,7 @@ import type { Attempt, DailyPlan, Exercise, MistakeItem, Settings } from '../dom
 import { db, getMeta, setMeta, type AttemptRow } from './db'
 
 export const DEFAULT_SETTINGS: Settings = {
-  language: 'zh-TW',
+  language: 'en',
   theme: 'system',
   speed: 1,
   fading: { full: 0.3, line: 0.3 },

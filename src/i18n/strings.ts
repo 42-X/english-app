@@ -1,5 +1,5 @@
 /* eslint-disable */
-// UI strings. Traditional Chinese is the default; English mirrors every key.
+// UI strings. English is the default UI language; Traditional Chinese mirrors every key.
 // Add a language by adding another dictionary with the same keys.
 
 const zh = {

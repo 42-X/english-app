@@ -73,18 +73,21 @@ function Shell() {
             <img src="/icon.svg" alt="" className="h-7 w-7" />
             {t('app.name')}
           </NavLink>
-          <nav className="hidden gap-1 sm:flex">
-            {NAV.map((n) => (
-              <NavLink
-                key={n.to}
-                to={n.to}
-                end={n.to === '/'}
-                className={({ isActive }) => `rounded-lg px-3 py-1.5 text-sm ${isActive ? 'bg-surface-2 font-medium text-ink' : 'text-ink-2 hover:text-ink'}`}
-              >
-                {t(n.key)}
-              </NavLink>
-            ))}
-          </nav>
+          <div className="flex items-center gap-1">
+            <nav className="hidden gap-1 sm:flex">
+              {NAV.map((n) => (
+                <NavLink
+                  key={n.to}
+                  to={n.to}
+                  end={n.to === '/'}
+                  className={({ isActive }) => `rounded-lg px-3 py-1.5 text-sm ${isActive ? 'bg-surface-2 font-medium text-ink' : 'text-ink-2 hover:text-ink'}`}
+                >
+                  {t(n.key)}
+                </NavLink>
+              ))}
+            </nav>
+            <LanguageToggle />
+          </div>
         </div>
       </header>
       <UpdateBanner />
@@ -107,6 +110,21 @@ function Shell() {
         ))}
       </nav>
     </div>
+  )
+}
+
+/** One-tap EN / 中文 switch, always visible in the header. */
+function LanguageToggle() {
+  const { settings, updateSettings } = useAppState()
+  const next = settings.language === 'en' ? 'zh-TW' : 'en'
+  return (
+    <button
+      onClick={() => void updateSettings({ language: next })}
+      className="ml-1 rounded-lg border border-line px-2.5 py-1 text-sm text-ink-2 hover:bg-surface-2 hover:text-ink"
+      aria-label={next === 'en' ? 'Switch to English' : '切換為中文'}
+    >
+      {next === 'en' ? 'EN' : '中文'}
+    </button>
   )
 }
 
