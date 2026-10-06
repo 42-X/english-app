@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, NavLink, Outlet, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, NavLink, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { startAutoSync } from '../data/sync'
 import { CreatePage } from '../features/create/CreatePage'
@@ -37,6 +37,7 @@ function Localized() {
     <I18nProvider lang={settings.language}>
       {libraryError && <div className="bg-bad-soft px-4 py-2 text-center text-sm text-bad">Could not load the exercise library. Check your connection and reload.</div>}
       <BrowserRouter>
+        <AutoUpdate />
         <Routes>
           <Route path="/play/:id" element={<PlayerPage />} />
           <Route element={<Shell />}>
@@ -90,7 +91,6 @@ function Shell() {
           </div>
         </div>
       </header>
-      <UpdateBanner />
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 pt-5 pb-24 sm:pb-10">
         <Outlet />
       </main>
@@ -128,20 +128,28 @@ function LanguageToggle() {
   )
 }
 
-/** New version available → let the learner choose when to reload (never mid-exercise). */
-function UpdateBanner() {
-  const { t } = useI18n()
+/**
+ * Keeps installed copies current without relying on the learner noticing anything:
+ * checks for a new version on launch, whenever the app returns to the foreground, and every
+ * 30 minutes; applies it automatically — but never mid-exercise (waits until she leaves the player).
+ */
+function AutoUpdate() {
+  const { pathname } = useLocation()
   const {
     needRefresh: [needRefresh],
     updateServiceWorker,
-  } = useRegisterSW()
-  if (!needRefresh) return null
-  return (
-    <div className="flex items-center justify-center gap-3 bg-accent-soft px-4 py-2 text-sm text-ink">
-      {t('update.available')}
-      <button className="font-medium text-accent underline" onClick={() => void updateServiceWorker(true)}>
-        {t('update.reload')}
-      </button>
-    </div>
-  )
+  } = useRegisterSW({
+    onRegisteredSW(_url, reg) {
+      if (!reg) return
+      const check = () => {
+        if (navigator.onLine) void reg.update().catch(() => {})
+      }
+      setInterval(check, 30 * 60_000)
+      document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && check())
+    },
+  })
+  useEffect(() => {
+    if (needRefresh && !pathname.startsWith('/play/')) void updateServiceWorker(true)
+  }, [needRefresh, pathname, updateServiceWorker])
+  return null
 }

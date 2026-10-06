@@ -4,6 +4,8 @@ import { defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // Build stamp shown in Settings → About (and on <html data-build>) to tell versions apart.
+  define: { __BUILD__: JSON.stringify(new Date().toISOString().slice(0, 19).replace('T', ' ') + ' UTC') },
   plugins: [
     react(),
     tailwindcss(),

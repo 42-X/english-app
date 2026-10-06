@@ -359,6 +359,7 @@ const zh = {
   'settings.imported': '已匯入 {n} 筆資料',
   'settings.importFailed': '匯入失敗：檔案格式不正確',
   'settings.about': '關於',
+  'settings.version': '版本',
   'settings.aboutAudio': '「真人錄音」題目取自 Spoken Wikipedia（CC BY-SA）志願者朗讀的維基百科條目，擷取片段後修改畫面上的字。其餘題目為原創段落，以開源 Kokoro TTS 合成。皆非 Pearson 官方題目。',
   'settings.aboutPrivacy': '所有分析都在你的裝置上計算，不會傳送到任何 AI 服務。',
   'settings.authError': '登入失敗：{error}',
@@ -366,8 +367,6 @@ const zh = {
   'settings.installHint': 'iPhone：Safari 分享 → 加入主畫面。Android / 電腦：瀏覽器選單 → 安裝應用程式。',
 
   'offline.ready': '已可離線使用',
-  'update.available': '有新版本',
-  'update.reload': '更新',
 } as const
 
 export type StringKey = keyof typeof zh
@@ -729,6 +728,7 @@ const en: Record<StringKey, string> = {
   'settings.imported': 'Imported {n} records',
   'settings.importFailed': 'Import failed: not a valid backup file',
   'settings.about': 'About',
+  'settings.version': 'Version',
   'settings.aboutAudio': '“Human voice” items are excerpts of Spoken Wikipedia recordings (volunteers reading Wikipedia articles, CC BY-SA) with on-screen words altered for practice; each result page credits its reader. Other passages are original, voiced with open-source Kokoro TTS. None are official Pearson material.',
   'settings.aboutPrivacy': 'All analysis runs on your device. Nothing is sent to any AI service.',
   'settings.authError': 'Sign-in failed: {error}',
@@ -736,8 +736,6 @@ const en: Record<StringKey, string> = {
   'settings.installHint': 'iPhone: Safari Share → Add to Home Screen. Android / desktop: browser menu → Install app.',
 
   'offline.ready': 'Ready to work offline',
-  'update.available': 'New version available',
-  'update.reload': 'Update',
 }
 
 export const DICTIONARIES = { 'zh-TW': zh as Record<StringKey, string>, en }

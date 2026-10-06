@@ -126,6 +126,9 @@ export function SettingsPage() {
           <li>{t('settings.aboutAudio')}</li>
           <li>{t('settings.aboutPrivacy')}</li>
           <li>{t('results.simulation')}</li>
+          <li className="text-ink-3">
+            {t('settings.version')}: {__BUILD__}
+          </li>
         </ul>
       </Card>
     </div>
