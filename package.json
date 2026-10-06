@@ -14,7 +14,10 @@
     "audio": ".venv-tts/bin/python scripts/generate_audio.py",
     "deploy": "npm run build && wrangler deploy",
     "human:fetch": ".venv-tts/bin/python scripts/build_human_audio.py fetch",
-    "human:build": ".venv-tts/bin/python scripts/build_human_audio.py build"
+    "human:build": ".venv-tts/bin/python scripts/build_human_audio.py build",
+    "human:rewindow": ".venv-tts/bin/python scripts/build_human_audio.py rewindow",
+    "human:items": ".venv-tts/bin/python scripts/items_from_text.py",
+    "human:verify": ".venv-tts/bin/python scripts/build_human_audio.py verify"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",

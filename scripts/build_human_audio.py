@@ -359,9 +359,9 @@ def build():
                 }
             )
         words_n = len(tokens)
-        wpm = words_n / max(1.0, (c["end"] - c["start"]) / 60)
+        wpm = words_n / (max(1.0, c["end"] - c["start"]) / 60)
         # 1 easier (slower/shorter) · 2 exam standard · 3 harder (fast or long)
-        auto_level = 1 if wpm < 140 and words_n < 100 else 3 if wpm >= 170 or words_n >= 118 else 2
+        auto_level = 1 if wpm < 128 or (wpm < 138 and words_n < 95) else 3 if wpm >= 170 else 2
         src = dict(c["source"])
         artist = re.sub(r"^(Speaker:|The original uploader was)\s*", "", src["artist"]).split("\n")[0].strip()
         src["artist"] = re.sub(r"\s+at English Wikipedia.*$", "", artist) or "Wikimedia contributor"
@@ -435,41 +435,51 @@ def rewindow():
 
 
 def verify():
-    """Re-transcribe every built clip and compare with its tokens (catches bad cuts or misalignment)."""
-    from faster_whisper import WhisperModel
+    """Re-transcribe every active clip and compare with its tokens (catches bad cuts or misalignment)."""
+    from difflib import SequenceMatcher
 
-    model = WhisperModel("small.en", device="cpu", compute_type="int8", cpu_threads=16)
-    lib = [e for e in json.loads(LIBRARY.read_text()) if "human-audio" in e.get("tags", [])]
+    lib = [e for e in json.loads(LIBRARY.read_text()) if "human-audio" in e.get("tags", []) and not e.get("archived")]
     norm = lambda w: re.sub(r"[^a-z0-9]", "", w.lower())
+    cache_dir = CACHE / "verify"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    model = None
     report = []
     for e in lib:
-        pcm = decode(AUDIO_DIR / f"{e['id']}.mp3", 16_000)
-        segs, _ = model.transcribe(pcm, language="en", word_timestamps=True, beam_size=2, condition_on_previous_text=False)
-        heard = [(norm(w.word), w.start * 1000) for s in segs for w in (s.words or []) if norm(w.word)]
+        cached = cache_dir / f"{e['id']}.json"
+        if cached.exists():
+            heard_raw = json.loads(cached.read_text())
+        else:
+            if model is None:
+                from faster_whisper import WhisperModel
+
+                model = WhisperModel("small.en", device="cpu", compute_type="int8", cpu_threads=16)
+            pcm = decode(AUDIO_DIR / f"{e['id']}.mp3", 16_000)
+            segs, _ = model.transcribe(pcm, language="en", word_timestamps=True, beam_size=2, condition_on_previous_text=False)
+            heard_raw = [[w.word, round(w.start * 1000)] for s in segs for w in (s.words or [])]
+            cached.write_text(json.dumps(heard_raw))
+        heard = [(norm(w), t) for w, t in heard_raw if norm(w)]
         expected = [(norm(t["spokenText"]), t["startMs"]) for t in e["tokens"]]
-        # Greedy alignment: walk both sequences, allowing small skips.
-        i = j = matched = 0
+        sm = SequenceMatcher(a=[w for w, _ in expected], b=[w for w, _ in heard], autojunk=False)
         offsets = []
-        while i < len(expected) and j < len(heard):
-            if expected[i][0] == heard[j][0]:
-                matched += 1
-                offsets.append(abs(expected[i][1] - heard[j][1]))
-                i += 1
-                j += 1
-            elif j + 1 < len(heard) and expected[i][0] == heard[j + 1][0]:
-                j += 1
-            else:
-                i += 1
+        for blk in sm.get_matching_blocks():
+            for k in range(blk.size):
+                offsets.append(abs(expected[blk.a + k][1] - heard[blk.b + k][1]))
         offsets.sort()
         med = offsets[len(offsets) // 2] if offsets else 9999
-        rate = matched / max(1, len(expected))
-        ok = rate >= 0.9 and med <= 250
-        report.append({"id": e["id"], "match": round(rate, 3), "medianOffsetMs": round(med), "ok": ok})
-        print(f"{e['id']:5} match {rate:5.1%} median offset {med:4.0f} ms {'OK' if ok else 'CHECK'}", flush=True)
-    (HUMAN / "verify.json").write_text(json.dumps(report, indent=1))
+        p90 = offsets[int(len(offsets) * 0.9)] if offsets else 9999
+        rate = len(offsets) / max(1, len(expected))
+        # Words that differ between screen-spoken text and a fresh transcription (possible mis-transcription).
+        diffs = [
+            (" ".join(w for w, _ in expected[i1:i2]), " ".join(w for w, _ in heard[j1:j2]))
+            for tag, i1, i2, j1, j2 in sm.get_opcodes()
+            if tag != "equal"
+        ]
+        ok = rate >= 0.9 and med <= 250 and p90 <= 600
+        report.append({"id": e["id"], "match": round(rate, 3), "medianOffsetMs": med, "p90OffsetMs": p90, "ok": ok, "diffs": diffs})
+        print(f"{e['id']:5} match {rate:5.1%} offset median {med:4.0f} ms p90 {p90:4.0f} ms {'OK' if ok else 'CHECK'}", flush=True)
+    (HUMAN / "verify.json").write_text(json.dumps(report, indent=1, ensure_ascii=False))
     bad = [r["id"] for r in report if not r["ok"]]
     print(f"{len(report) - len(bad)}/{len(report)} clips verified; needs attention: {bad}")
-
 
 if __name__ == "__main__":
     {"fetch": fetch, "rewindow": rewindow, "build": build, "verify": verify}[sys.argv[1]]()

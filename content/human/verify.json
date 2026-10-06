@@ -1,0 +1,1988 @@
+[
+ {
+  "id": "w001",
+  "match": 0.981,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "asteroid belts",
+    "asteroids belt"
+   ]
+  ]
+ },
+ {
+  "id": "w002",
+  "match": 0.955,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": [
+   [
+    "the",
+    ""
+   ],
+   [
+    "voltagedependent calciumselective",
+    "voltage dependent calcium selective"
+   ],
+   [
+    "",
+    "to"
+   ],
+   [
+    "ions",
+    "using irons"
+   ]
+  ]
+ },
+ {
+  "id": "w003",
+  "match": 0.98,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": [
+   [
+    "lowcarbon",
+    "low carbon"
+   ],
+   [
+    "phaseout",
+    "phase out"
+   ]
+  ]
+ },
+ {
+  "id": "w004",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w005",
+  "match": 0.99,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "selfawareness",
+    "self awareness"
+   ]
+  ]
+ },
+ {
+  "id": "w006",
+  "match": 0.992,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "strand",
+    "strands"
+   ]
+  ]
+ },
+ {
+  "id": "w007",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w008",
+  "match": 0.992,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "doublestranded",
+    "double stranded"
+   ]
+  ]
+ },
+ {
+  "id": "w009",
+  "match": 0.99,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "minuscule",
+    "miniscule"
+   ]
+  ]
+ },
+ {
+  "id": "w010",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w011",
+  "match": 0.99,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "nontoxic",
+    "non toxic"
+   ]
+  ]
+ },
+ {
+  "id": "w012",
+  "match": 0.958,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "timbre",
+    "timber"
+   ],
+   [
+    "helium4s",
+    "helium 4s"
+   ],
+   [
+    "helium1",
+    "helium 1"
+   ],
+   [
+    "helium2",
+    "helium 2"
+   ]
+  ]
+ },
+ {
+  "id": "w013",
+  "match": 0.969,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "helium4",
+    "helium 4"
+   ],
+   [
+    "helium4",
+    "helium 4"
+   ],
+   [
+    "helium4",
+    "helium 4"
+   ]
+  ]
+ },
+ {
+  "id": "w014",
+  "match": 0.974,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "diskshaped",
+    "disk shaped"
+   ],
+   [
+    "longperiod",
+    "long period"
+   ],
+   [
+    "halleytype",
+    "haly type"
+   ]
+  ]
+ },
+ {
+  "id": "w015",
+  "match": 0.97,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": [
+   [
+    "oort",
+    "ought"
+   ],
+   [
+    "shortperiod",
+    "short period"
+   ],
+   [
+    "longperiod",
+    "long period"
+   ]
+  ]
+ },
+ {
+  "id": "w016",
+  "match": 0.969,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": [
+   [
+    "",
+    "the"
+   ],
+   [
+    "888",
+    "88 8"
+   ],
+   [
+    "209",
+    "20 9"
+   ],
+   [
+    "shells",
+    "cells"
+   ]
+  ]
+ },
+ {
+  "id": "w017",
+  "match": 0.968,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "25",
+    "2 5"
+   ],
+   [
+    "allotrope",
+    "allotrop"
+   ],
+   [
+    "scheele",
+    "scheerl"
+   ]
+  ]
+ },
+ {
+  "id": "w018",
+  "match": 0.957,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "139",
+    "1 39"
+   ],
+   [
+    "864000",
+    "864 000"
+   ],
+   [
+    "330000",
+    "330 000"
+   ],
+   [
+    "9986",
+    "99 86"
+   ]
+  ]
+ },
+ {
+  "id": "w019",
+  "match": 0.975,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "46",
+    "4 6"
+   ],
+   [
+    "10000",
+    "10 000"
+   ],
+   [
+    "170000",
+    "170 000"
+   ]
+  ]
+ },
+ {
+  "id": "w020",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w021",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w022",
+  "match": 0.991,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "oneeighth",
+    "one eighth"
+   ]
+  ]
+ },
+ {
+  "id": "w023",
+  "match": 0.968,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "systemwide",
+    "system wide"
+   ],
+   [
+    "lowcarbon",
+    "low carbon"
+   ],
+   [
+    "cobenefits",
+    "co benefits"
+   ]
+  ]
+ },
+ {
+  "id": "w024",
+  "match": 0.976,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "selfconcept",
+    "self concept"
+   ],
+   [
+    "selfconcepts",
+    "self concepts"
+   ],
+   [
+    "selfconcept",
+    "self concept"
+   ],
+   [
+    "",
+    "no"
+   ]
+  ]
+ },
+ {
+  "id": "w025",
+  "match": 0.954,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": [
+   [
+    "selfconcept",
+    "self concept"
+   ],
+   [
+    "selfconcept",
+    "self concept"
+   ],
+   [
+    "selfconcept",
+    "self concept"
+   ],
+   [
+    "selfconcept",
+    "self concept"
+   ],
+   [
+    "selfconcept",
+    "self concept"
+   ]
+  ]
+ },
+ {
+  "id": "w026",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w027",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "",
+    "not"
+   ],
+   [
+    "",
+    "however"
+   ]
+  ]
+ },
+ {
+  "id": "w028",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w029",
+  "match": 0.984,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "percent",
+    ""
+   ],
+   [
+    "selffulfilling",
+    "self fulfilling"
+   ]
+  ]
+ },
+ {
+  "id": "w030",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w031",
+  "match": 0.991,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "insulindependent",
+    "insulin dependent"
+   ]
+  ]
+ },
+ {
+  "id": "w032",
+  "match": 0.978,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "5000",
+    "5 000"
+   ],
+   [
+    "135000",
+    "135 000"
+   ]
+  ]
+ },
+ {
+  "id": "w033",
+  "match": 0.968,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "nonpublic",
+    "non public"
+   ],
+   [
+    "nonpublic",
+    "non public"
+   ],
+   [
+    "nonpublic",
+    "non public"
+   ]
+  ]
+ },
+ {
+  "id": "w034",
+  "match": 0.989,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "wellknown",
+    "well known"
+   ]
+  ]
+ },
+ {
+  "id": "w035",
+  "match": 0.964,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 90,
+  "ok": true,
+  "diffs": [
+   [
+    "unipolar",
+    "an eye polar"
+   ],
+   [
+    "unipolar",
+    "an eye polar"
+   ],
+   [
+    "selfesteem",
+    "self esteem"
+   ],
+   [
+    "",
+    "a"
+   ],
+   [
+    "simply",
+    "simple"
+   ]
+  ]
+ },
+ {
+  "id": "w036",
+  "match": 0.99,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "longterm",
+    "long term"
+   ]
+  ]
+ },
+ {
+  "id": "w037",
+  "match": 0.976,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "eg",
+    "e g"
+   ],
+   [
+    "an",
+    "in"
+   ]
+  ]
+ },
+ {
+  "id": "w038",
+  "match": 0.99,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "lowgrade",
+    "low grade"
+   ],
+   [
+    "",
+    "of"
+   ]
+  ]
+ },
+ {
+  "id": "w039",
+  "match": 0.971,
+  "medianOffsetMs": 20,
+  "p90OffsetMs": 40,
+  "ok": true,
+  "diffs": [
+   [
+    "pair",
+    "pear"
+   ],
+   [
+    "voles",
+    "moles"
+   ],
+   [
+    "dopaminemediated",
+    "the dopamine mediated"
+   ]
+  ]
+ },
+ {
+  "id": "w040",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w041",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w042",
+  "match": 0.949,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "postscarcity",
+    "post scarcity"
+   ],
+   [
+    "postscarcity",
+    "post scarcity"
+   ],
+   [
+    "their",
+    "the"
+   ],
+   [
+    "a postscarcity",
+    "opposed scarcity"
+   ]
+  ]
+ },
+ {
+  "id": "w043",
+  "match": 0.974,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "fouryear",
+    "four year"
+   ],
+   [
+    "valerios stais",
+    "barrios stace"
+   ]
+  ]
+ },
+ {
+  "id": "w044",
+  "match": 0.976,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": [
+   [
+    "xray",
+    "x ray"
+   ],
+   [
+    "highresolution",
+    "high resolution"
+   ],
+   [
+    "crustencased",
+    "crust encased"
+   ]
+  ]
+ },
+ {
+  "id": "w045",
+  "match": 0.988,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": [
+   [
+    "",
+    "an ad"
+   ],
+   [
+    "hydraulicpowered",
+    "hydraulic powered"
+   ]
+  ]
+ },
+ {
+  "id": "w046",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w047",
+  "match": 0.991,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "",
+    "and then"
+   ],
+   [
+    "found",
+    "phoned"
+   ]
+  ]
+ },
+ {
+  "id": "w048",
+  "match": 0.983,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "sixth",
+    "6th"
+   ],
+   [
+    "fourth",
+    "4th"
+   ]
+  ]
+ },
+ {
+  "id": "w049",
+  "match": 0.92,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "nearterm",
+    "near term"
+   ],
+   [
+    "postscarcity",
+    "post scarcity"
+   ],
+   [
+    "selfreplicating",
+    "self replicating"
+   ],
+   [
+    "postscarcity",
+    "post scarcity"
+   ],
+   [
+    "selfreplicating",
+    "self replicating"
+   ],
+   [
+    "adrian bowyer",
+    "erian boyer"
+   ],
+   [
+    "reprap project",
+    "reprepproject"
+   ],
+   [
+    "selfreplicating",
+    "self replicating"
+   ]
+  ]
+ },
+ {
+  "id": "w050",
+  "match": 0.991,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": [
+   [
+    "dasyuromorphs",
+    "dasuromorphs"
+   ],
+   [
+    "",
+    "please"
+   ]
+  ]
+ },
+ {
+  "id": "w051",
+  "match": 0.967,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 130,
+  "ok": true,
+  "diffs": [
+   [
+    "presentday",
+    "present day"
+   ],
+   [
+    "zoogeographical",
+    "zoog geographical"
+   ],
+   [
+    "indoaustralian",
+    "indo australian"
+   ]
+  ]
+ },
+ {
+  "id": "w052",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "",
+    "of freedom"
+   ]
+  ]
+ },
+ {
+  "id": "w053",
+  "match": 0.991,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": [
+   [
+    "",
+    "world"
+   ],
+   [
+    "nonnatural",
+    "non natural"
+   ]
+  ]
+ },
+ {
+  "id": "w054",
+  "match": 0.991,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "",
+    "a"
+   ],
+   [
+    "are",
+    "our"
+   ]
+  ]
+ },
+ {
+  "id": "w055",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "",
+    "ornam"
+   ]
+  ]
+ },
+ {
+  "id": "w056",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "",
+    "similar"
+   ]
+  ]
+ },
+ {
+  "id": "w057",
+  "match": 0.989,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "ontogenetic",
+    "antigenetic"
+   ]
+  ]
+ },
+ {
+  "id": "w058",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w059",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w060",
+  "match": 0.948,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "",
+    "felidae"
+   ],
+   [
+    "semidesert",
+    "semi desert"
+   ],
+   [
+    "greytobrown",
+    "grey to brown"
+   ],
+   [
+    "whiskered",
+    "whisked"
+   ],
+   [
+    "midsized",
+    "mid sized"
+   ],
+   [
+    "about",
+    "out"
+   ]
+  ]
+ },
+ {
+  "id": "w061",
+  "match": 0.953,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "324",
+    "3 24"
+   ],
+   [
+    "26",
+    "2 6"
+   ],
+   [
+    "20000",
+    "20 000"
+   ],
+   [
+    "the",
+    "a"
+   ]
+  ]
+ },
+ {
+  "id": "w062",
+  "match": 0.972,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": [
+   [
+    "284",
+    "28 4"
+   ],
+   [
+    "831",
+    "83 1"
+   ],
+   [
+    "1202",
+    "1 202"
+   ]
+  ]
+ },
+ {
+  "id": "w063",
+  "match": 0.972,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "bubulcus",
+    "bublcus"
+   ],
+   [
+    "egretta",
+    "ygreta"
+   ],
+   [
+    "in",
+    "and"
+   ]
+  ]
+ },
+ {
+  "id": "w064",
+  "match": 0.99,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": [
+   [
+    "tickborne",
+    "tick borne"
+   ]
+  ]
+ },
+ {
+  "id": "w065",
+  "match": 0.98,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 90,
+  "ok": true,
+  "diffs": [
+   [
+    "longterm",
+    "long term"
+   ],
+   [
+    "and",
+    "in"
+   ]
+  ]
+ },
+ {
+  "id": "w066",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w067",
+  "match": 0.96,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "nonbiotic",
+    "non biotic"
+   ],
+   [
+    "time scales",
+    "timescales"
+   ],
+   [
+    "300400",
+    "300 to 400"
+   ]
+  ]
+ },
+ {
+  "id": "w068",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w069",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w070",
+  "match": 0.98,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "ten",
+    "10"
+   ],
+   [
+    "deinosuchus",
+    "dinosuchus"
+   ]
+  ]
+ },
+ {
+  "id": "w071",
+  "match": 0.964,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "multicoloured",
+    "multi coloured"
+   ],
+   [
+    "fission fusion",
+    "fish infusion"
+   ],
+   [
+    "polygynandrous",
+    "polygonandrous"
+   ]
+  ]
+ },
+ {
+  "id": "w072",
+  "match": 0.991,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "brownishgrey",
+    "brownish grey"
+   ]
+  ]
+ },
+ {
+  "id": "w073",
+  "match": 0.953,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "13",
+    "1 3"
+   ],
+   [
+    "28",
+    "2 8"
+   ],
+   [
+    "28",
+    "2 8"
+   ],
+   [
+    "62",
+    "6 2"
+   ],
+   [
+    "",
+    "end"
+   ],
+   [
+    "gray",
+    "grey"
+   ]
+  ]
+ },
+ {
+  "id": "w074",
+  "match": 0.966,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "litter",
+    "litterer"
+   ],
+   [
+    "kits",
+    "kids"
+   ],
+   [
+    "kits",
+    "kids"
+   ]
+  ]
+ },
+ {
+  "id": "w075",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w076",
+  "match": 0.941,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "limerant",
+    "limerent"
+   ],
+   [
+    "limerant",
+    "limerent"
+   ],
+   [
+    "limerant",
+    "limerent"
+   ],
+   [
+    "limerant",
+    "limerent"
+   ],
+   [
+    "limerance",
+    "limerence"
+   ],
+   [
+    "limerance",
+    "limerence"
+   ],
+   [
+    "shortlived",
+    "short lived"
+   ]
+  ]
+ },
+ {
+  "id": "w077",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w078",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "",
+    "a"
+   ]
+  ]
+ },
+ {
+  "id": "w079",
+  "match": 0.949,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "0",
+    "zero"
+   ],
+   [
+    "0",
+    "zero"
+   ],
+   [
+    "zero",
+    "0"
+   ],
+   [
+    "zero",
+    "0"
+   ],
+   [
+    "zero",
+    "0"
+   ],
+   [
+    "zero",
+    "0"
+   ]
+  ]
+ },
+ {
+  "id": "w080",
+  "match": 0.988,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "lefthanded",
+    "left handed"
+   ]
+  ]
+ },
+ {
+  "id": "w081",
+  "match": 0.955,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "metaanalysis",
+    "meta analysis"
+   ],
+   [
+    "metaanalysis",
+    "meta analysis"
+   ],
+   [
+    "patientlevel",
+    "patient level"
+   ],
+   [
+    "nonssri",
+    "non ssri"
+   ]
+  ]
+ },
+ {
+  "id": "w082",
+  "match": 0.956,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 90,
+  "ok": true,
+  "diffs": [
+   [
+    "allotropes",
+    "alliotropes"
+   ],
+   [
+    "plutonium239",
+    "plutonium 239"
+   ],
+   [
+    "halflife",
+    "half life"
+   ],
+   [
+    "24100",
+    "24 100"
+   ]
+  ]
+ },
+ {
+  "id": "w083",
+  "match": 0.981,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "dendrobatidae",
+    "dendrobadida"
+   ],
+   [
+    "dendrobatidae",
+    "dendro badida"
+   ]
+  ]
+ },
+ {
+  "id": "w084",
+  "match": 0.981,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "curare",
+    "cure air"
+   ],
+   [
+    "phyllobates",
+    "phylobatus"
+   ]
+  ]
+ },
+ {
+  "id": "w085",
+  "match": 0.977,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": [
+   [
+    "comes",
+    "come"
+   ],
+   [
+    "loveshyness",
+    "love shyness"
+   ]
+  ]
+ },
+ {
+  "id": "w086",
+  "match": 0.974,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": [
+   [
+    "",
+    "are"
+   ],
+   [
+    "silvers",
+    "silver"
+   ],
+   [
+    "700 bc",
+    "700bc"
+   ]
+  ]
+ },
+ {
+  "id": "w087",
+  "match": 0.99,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "selfconsciousness",
+    "self consciousness"
+   ]
+  ]
+ },
+ {
+  "id": "w088",
+  "match": 0.992,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "anxietyprovoking",
+    "anxiety provoking"
+   ]
+  ]
+ },
+ {
+  "id": "w089",
+  "match": 0.991,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "rnen",
+    "orden"
+   ]
+  ]
+ },
+ {
+  "id": "w090",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w091",
+  "match": 0.97,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "wellknown",
+    "well known"
+   ],
+   [
+    "sundials",
+    "sun dials"
+   ],
+   [
+    "timemeasuring",
+    "time measuring"
+   ]
+  ]
+ },
+ {
+  "id": "w092",
+  "match": 0.992,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": [
+   [
+    "springdriven",
+    "the spring driven"
+   ],
+   [
+    "",
+    "electrons"
+   ]
+  ]
+ },
+ {
+  "id": "w093",
+  "match": 0.99,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "indepth",
+    "in depth"
+   ]
+  ]
+ },
+ {
+  "id": "w094",
+  "match": 0.978,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": [
+   [
+    "shoemakerlevy",
+    "shoemaker levy"
+   ],
+   [
+    "nonperiodic",
+    "non periodic"
+   ]
+  ]
+ },
+ {
+  "id": "w095",
+  "match": 0.97,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": [
+   [
+    "recordkeeping",
+    "record keeping"
+   ],
+   [
+    "computerbased",
+    "computer based"
+   ],
+   [
+    "errorprone",
+    "error prone"
+   ]
+  ]
+ },
+ {
+  "id": "w096",
+  "match": 0.989,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": [
+   [
+    "wavelike",
+    "wave like"
+   ]
+  ]
+ },
+ {
+  "id": "w097",
+  "match": 0.956,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 90,
+  "ok": true,
+  "diffs": [
+   [
+    "boinc",
+    "boink"
+   ],
+   [
+    "largescale",
+    "large scale"
+   ],
+   [
+    "",
+    "of"
+   ],
+   [
+    "pande",
+    "pandi"
+   ],
+   [
+    "project",
+    "projects"
+   ]
+  ]
+ },
+ {
+  "id": "w098",
+  "match": 0.99,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "crude",
+    "grids"
+   ]
+  ]
+ },
+ {
+  "id": "w099",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w100",
+  "match": 0.974,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": [
+   [
+    "pseudopromotion",
+    "pseudo promotion"
+   ],
+   [
+    "pseudopromotion",
+    "pseudo promotion"
+   ],
+   [
+    "superincompetence",
+    "super incompetence"
+   ]
+  ]
+ },
+ {
+  "id": "w101",
+  "match": 0.976,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "follicleassociated",
+    "follicle associated"
+   ],
+   [
+    "follicleassociated",
+    "follicle associated"
+   ],
+   [
+    "peyers",
+    "pyrus"
+   ]
+  ]
+ },
+ {
+  "id": "w102",
+  "match": 0.983,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "mid1990s",
+    "mid 1990s"
+   ],
+   [
+    "as",
+    "that is"
+   ]
+  ]
+ },
+ {
+  "id": "w103",
+  "match": 0.982,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "arloff",
+    "arloft"
+   ],
+   [
+    "rheinisches",
+    "rhinoches"
+   ]
+  ]
+ },
+ {
+  "id": "w104",
+  "match": 0.978,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "ie",
+    "i e"
+   ],
+   [
+    "industryspecific",
+    "industry specific"
+   ]
+  ]
+ },
+ {
+  "id": "w105",
+  "match": 0.991,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "5000",
+    "5 000"
+   ],
+   [
+    "",
+    "peace out"
+   ]
+  ]
+ },
+ {
+  "id": "w106",
+  "match": 0.99,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "roleplaying",
+    "role playing"
+   ]
+  ]
+ },
+ {
+  "id": "w107",
+  "match": 0.984,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": [
+   [
+    "ie",
+    "i e"
+   ],
+   [
+    "pellets",
+    "pallets"
+   ]
+  ]
+ },
+ {
+  "id": "w108",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w109",
+  "match": 0.983,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "pyszczynski",
+    "pazinski"
+   ],
+   [
+    "selfpreservation",
+    "self preservation"
+   ]
+  ]
+ },
+ {
+  "id": "w110",
+  "match": 0.983,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": [
+   [
+    "selfesteem",
+    "self esteem"
+   ],
+   [
+    "deathrelated",
+    "death related"
+   ]
+  ]
+ },
+ {
+  "id": "w111",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 90,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w112",
+  "match": 0.983,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": [
+   [
+    "salvin",
+    "sullivan"
+   ],
+   [
+    "postmedieval",
+    "post medieval"
+   ]
+  ]
+ },
+ {
+  "id": "w113",
+  "match": 0.935,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 30,
+  "ok": true,
+  "diffs": [
+   [
+    "health care",
+    "healthcare"
+   ],
+   [
+    "health care",
+    "healthcare"
+   ],
+   [
+    "health care",
+    "healthcare"
+   ],
+   [
+    "health care",
+    "healthcare"
+   ],
+   [
+    "",
+    "the"
+   ]
+  ]
+ },
+ {
+  "id": "w114",
+  "match": 1.0,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 50,
+  "ok": true,
+  "diffs": []
+ },
+ {
+  "id": "w115",
+  "match": 0.978,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 70,
+  "ok": true,
+  "diffs": [
+   [
+    "sigismund marggraf",
+    "ziggismund margraff"
+   ]
+  ]
+ },
+ {
+  "id": "w116",
+  "match": 0.99,
+  "medianOffsetMs": 20,
+  "p90OffsetMs": 40,
+  "ok": true,
+  "diffs": [
+   [
+    "sphalerite",
+    "spherolite"
+   ]
+  ]
+ },
+ {
+  "id": "w117",
+  "match": 0.932,
+  "medianOffsetMs": 30,
+  "p90OffsetMs": 90,
+  "ok": true,
+  "diffs": [
+   [
+    "yttrium",
+    "itrium"
+   ],
+   [
+    "dblock",
+    "de block"
+   ],
+   [
+    "5th",
+    "fifth"
+   ],
+   [
+    "micrometers",
+    "micrometres"
+   ],
+   [
+    "vapor",
+    "vapour"
+   ],
+   [
+    "finely",
+    "finally"
+   ],
+   [
+    "yttrium",
+    "e trim"
+   ]
+  ]
+ }
+]

@@ -1,0 +1,120 @@
+# Hand-written HIW swaps for exam-length Spoken Wikipedia excerpts.
+# id | candidate | kind | spoken>display category; ... | options (range=a-b, fix=i:text, title=...)
+# Kinds: realistic (2–7 swaps) · overclick (0–2) · easy (1–2 obvious)
+w001 | Asteroid_belt#1 | realistic | precursors>predecessors semantic; energy>energies singular-plural; meteorite>meteor suffix | fix=75:asteroid,76:belt's
+w002 | Chemical_synapse#1 | realistic | docked>locked near-sound; influx>inflow semantic; bind>find near-sound; nearby>nearly near-sound | range=0-87
+w003 | Climate_change#3 | realistic | thresholds>threshold singular-plural; efficiency>efficient noun-adjective
+w004 | Cognitive_dissonance#1 | realistic | mental>metal near-sound; perceived>received near-sound; strive>thrive near-sound
+w005 | Consciousness#1 | overclick | inner>outer semantic
+w006 | DNA#1 | realistic | largest>longest semantic; strands@1>stands near-sound; holds>folds near-sound; multiple>several semantic | fix=71:strands
+w007 | DNA#3 | realistic | arrangement>agreement near-sound; broken>spoken near-sound; temperature>temperatures singular-plural | fix=60:pi
+w008 | DNA#4 | overclick | vital>visual near-sound; stronger>strong suffix
+w009 | Fermi_paradox#1 | realistic | scale>sale near-sound; estimated>estimate ed-ending; minuscule>minimal semantic; civilizations>civilization singular-plural; typical>topical near-sound; outcomes>incomes prefix
+w010 | Gamma_ray#3 | realistic | discovered@1>uncovered prefix; powerful>useful semantic; noted>noticed suffix; fundamental>functional near-sound
+w011 | Helium#1 | realistic | lowest>slowest near-sound; extreme>extra near-sound; observed@1>obscured near-sound; jointly>justly near-sound; propose>suppose near-sound
+w012 | Helium#2 | easy | lightest>heaviest semantic
+w013 | Helium#3 | realistic | binding@1>bonding near-sound; created>generated semantic; heavier>heavy suffix
+w014 | Oort_cloud#1 | realistic | largely>large suffix; source>sources singular-plural | fix=97:Halley-type
+w015 | Oort_cloud#4 | realistic | repeatedly>reportedly near-sound; boils>spoils near-sound; prevents>presents near-sound; reservoir>reserve suffix; orbits>orbit singular-plural; plane@2>place near-sound | fix=33:Oort,
+w016 | Oxygen#1 | overclick |
+w017 | Oxygen#2 | realistic | toxic>tonic near-sound; dominant>dominate word-family; accumulate>calculate near-sound; pollutant>pollution suffix | fix=76:Scheele
+w018 | Sun#1 | realistic | nearly>newly near-sound; heated>treated near-sound; important>imported near-sound; diameter>parameter near-sound
+w019 | Sun#3 | realistic | formed@1>found near-sound; gathered>scattered semantic; dense>tense near-sound
+w020 | Sun#4 | overclick | diminished>finished near-sound
+w021 | Earth#1 | realistic | islands>highlands near-sound; polar>solar near-sound; rigid>rapid near-sound; generates>generated ed-ending
+w022 | Saturn#1 | realistic | sixth>fifth number; surrounded>surround ed-ending
+w023 | Sustainable_energy#1 | realistic | require>acquire near-sound; deaths>debts near-sound; transition>tradition near-sound; access>excess near-sound
+w024 | Big_fish_little_pond_effect#1 | realistic | introduced>produced near-sound; compare>compared ed-ending; less@1>more semantic; susceptible>acceptable near-sound; depends>depended verb-tense
+w025 | Big_fish_little_pond_effect#3 | realistic | better>best suffix; toward@1>towards function-word; relationship@2>relation suffix
+w026 | Bioinformatics#1 | overclick | tools>tool singular-plural; faster>vaster near-sound
+w027 | Curse_of_knowledge#1 | realistic | bargaining@2>arguing semantic; regardless>regarding suffix; larger>large suffix | range=0-91
+w028 | Dyslexia#1 | realistic | expected>accepted near-sound; understanding>understand ing-ending; involuntary>voluntary prefix; rates>rate singular-plural
+w029 | Dyslexia#2 | realistic | adjusting>adjusted ed-ending; areas>area singular-plural
+w030 | Functional_programming#1 | realistic | application@1>applications singular-plural; contrast>context near-sound; developed>developing ing-ending; investigate>instigate near-sound; viewed>reviewed prefix
+w031 | Glucagon#1 | realistic | indirectly>directly prefix; convert>covert near-sound; stimulate>simulate near-sound; increases>increased ed-ending
+w032 | Humpback_whale#1 | realistic | shallower>shallow suffix; predators>predator singular-plural; recovered>covered prefix | range=0-90
+w033 | Insider_trading#1 | realistic | corporations>cooperations near-sound; legal>illegal prefix; frequently>frequent suffix; during>after preposition; trust>truth near-sound
+w034 | Intonation_linguistics#1 | realistic | main>many near-sound; convey>convert near-sound; occupied>occupy ed-ending; with@2>over preposition
+w035 | Major_depressive_disorder#1 | realistic | persistent>consistent near-sound; accompanied>accomplished near-sound; interest>interests singular-plural; refer>prefer near-sound; disabling>disturbing near-sound | fix=11:unipolar,14:unipolar
+w036 | Major_depressive_disorder#3 | realistic | shorter>short suffix; unclear>clear prefix; former>formal near-sound
+w037 | Neural_network_machine_learning#1 | overclick |
+w038 | Oil_shale#1 | realistic | risen>arisen prefix; established>establish ed-ending
+w039 | Pair_bond#1 | realistic | coined>joined near-sound; implies>applies near-sound; reference>preference prefix; greater>great suffix; located>allocated prefix; regulate>regular word-family | fix=0:Pair
+w040 | Parallel_computing#1 | realistic | employed>deployed prefix; grown>grew verb-tense; roughly>rough suffix; within>without preposition
+w041 | Parallel_computing#2 | realistic | written>rewritten prefix; serial@1>series near-sound; constructed>instructed near-sound; time>times singular-plural; independent>dependent prefix
+w042 | Post_scarcity#1 | realistic | cheaply>cheap suffix; proportion>portion prefix; remain>remains singular-plural
+w043 | Antikythera_mechanism#1 | realistic | track>trace near-sound; cycle@1>circle near-sound; retrieved@1>received near-sound; generation>generations singular-plural | fix=49:Valerios,50:Stais
+w044 | Antikythera_mechanism#2 | realistic | faintest>fainter suffix; movements>movement singular-plural
+w045 | Han_dynasty#1 | realistic | limited>unlimited prefix; conquered>concurred near-sound; repealed>repelled near-sound; advances>advantages near-sound; raised>praised near-sound
+w046 | Literary_criticism#1 | overclick | considered>consider ed-ending
+w047 | Logic#2 | realistic | simple>sample near-sound; depends>depended verb-tense; meanings@1>meaning singular-plural; strongest>strongly suffix; arrive>derive near-sound
+w048 | Pont_du_Gard#1 | realistic | late>later suffix; maintenance>maintaining verb-noun; stopped>stops verb-tense
+w049 | Post_scarcity#3 | realistic | designed>signed prefix; lower>low suffix; minimum>maximum semantic | fix=64:Adrian,65:Bowyer
+w050 | Fauna_of_Australia#1 | realistic | occupy>occupied ed-ending; two>three number; numerous>numerical word-family; has>had verb-tense | fix=67:dasyuromorphs
+w051 | Fauna_of_Australia#2 | realistic | extent>extend connected-speech; between>among preposition | fix=75:zoogeographical
+w052 | Habeas_corpus#1 | realistic | limitations>imitations near-sound; technically>technical suffix; permitted>permit ed-ending; temporarily>temporary word-family; efficient>effective semantic
+w053 | Natural_history_museum#1 | realistic | records>recordings word-family; improve>prove prefix; share>shared ed-ending; These>Those function-word
+w054 | Sequence_alignment#1 | realistic | occupying>occupy ing-ending; importance>important noun-adjective; than>then function-word | range=0-107
+w055 | Sexual_dimorphism#1 | realistic | easily>early near-sound; within>without preposition; commonly>common suffix; leads>led verb-tense; increased>decreased prefix; cost>costs singular-plural
+w056 | Sexual_dimorphism#2 | realistic | complex>complete near-sound; depending>dependent word-family; mistake>mistook verb-tense; vulnerability>visibility semantic
+w057 | Sexual_dimorphism#3 | overclick | positive>possible near-sound; permanent>prominent near-sound | range=0-94
+w058 | Shyness#1 | realistic | occur>recur prefix; remains>remained verb-tense; strangers>stranger singular-plural; physical>psychological semantic; devastating>devastated ing-ending
+w059 | Arithmetic#2 | realistic | cognitive>cognition noun-adjective; studied>studies verb-tense; thousands@1>hundreds number
+w060 | Bobcat#1 | realistic | smaller>small suffix; twice>half semantic | fix=54:whiskered
+w061 | Bobcat#2 | overclick |
+w062 | Caesium#1 | realistic | 28.4>28.6 number; liquid>liquids singular-plural; lower>slower near-sound; 641>614 number; burn>turn near-sound; 650>560 number
+w063 | Cattle_egret#1 | realistic | closely>close suffix; undergone>undergo verb-tense; colonized>colonies verb-noun; platform>plateau semantic | fix=9:Bubulcus,31:Egretta,74:white bird
+w064 | Cattle_egret#2 | realistic | unlike>like prefix; accompanying>accompanied ing-ending; migratory>migrating word-family; few>fewer suffix; removes>removed verb-tense
+w065 | Climate#1 | overclick | rigorously>vigorously near-sound
+w066 | Climate#2 | realistic | incorporates>incorporated verb-tense; studying>study ing-ending; direct>indirect prefix
+w067 | Climate#3 | realistic | sediments>settlements near-sound; models@1>modules near-sound; results>resulted verb-tense; written>driven near-sound
+w068 | Connectionism#1 | realistic | activation@1>action prefix; represent@1>present prefix
+w069 | Cougar#1 | realistic | prefers>refers near-sound; stalking>talking near-sound; territorial>territory noun-adjective; dense>dance near-sound; avoids>avoided ed-ending
+w070 | Deinosuchus#1 | realistic | lived@1>loved near-sound; modern>modest near-sound; longer>longest suffix; ten>two number; coastal>central near-sound; abundant>redundant near-sound | fix=4:Deinosuchus,34:Deinosuchus,72:Deinosuchus
+w071 | Dusky_dolphin#1 | realistic | curved>carved near-sound; closest>closer suffix; raise>raised ed-ending | fix=85:polygynandrous
+w072 | Fin_whale#1 | realistic | slender>slimmer near-sound; paler>pale suffix; major>minor semantic
+w073 | Island_fox#1 | realistic | weighs>weights verb-noun; 1.3>1.8 number; always>also near-sound; once>twice number
+w074 | Island_fox#2 | overclick | 50>60 number; captivity>activity near-sound | fix=23:kits,31:Kits
+w075 | Jaguar#1 | realistic | strongly>strong suffix; developed>developing ing-ending
+w076 | Limerence#1 | realistic | subjective>objective prefix; current>recent semantic; welfare>warfare near-sound; demands>demanded verb-tense; typically>typical suffix
+w077 | Paradox#1 | realistic | apparently>apparent suffix; contradiction@1>contradictions singular-plural; puzzling>puzzled ing-ending; recognition>cognition prefix | range=8-91
+w078 | Paradox#2 | overclick |
+w079 | Parity_of_zero#1 | realistic | additive>addictive near-sound; starting>staring near-sound; divisible@1>visible prefix
+w080 | Pigeonhole_principle#1 | overclick | three@1>four number
+w081 | Fluoxetine#3 | overclick | effective@1>affective near-sound | fix=66:paroxetine
+w082 | Plutonium#1 | realistic | reacts>reaches near-sound; moist>most near-sound; expand>expend near-sound; spontaneously>simultaneously near-sound; accumulates>accumulated ed-ending; overstated>understated prefix | fix=5:allotropes
+w083 | Poison_dart_frog#1 | realistic | formerly>formally near-sound; diurnal>nocturnal semantic; extremely>extreme suffix; diet>diets singular-plural | fix=30:Dendrobatidae,69:Dendrobatidae
+w084 | Poison_dart_frog#2 | realistic | cryptic>critic near-sound; threatened>threaten ed-ending; infrastructure>structure prefix; secretions>secrets near-sound; documented>documents verb-noun | fix=77:Curare,90:Phyllobates
+w085 | Shyness#2 | realistic | suitable>subtle near-sound; relaxed>relax ed-ending; absent>present semantic
+w086 | Silver#1 | realistic | electronic>electric word-family; safe>save connected-speech
+w087 | Social_anxiety#1 | realistic | clinically>clinical suffix; overwhelming>overwhelmed ing-ending; excessive@1>expensive near-sound; watched>washed near-sound; impairs>repairs near-sound; considerable>considerate suffix
+w088 | Social_anxiety#2 | realistic | differs>defers near-sound; functionally>functional suffix; certain@1>curtain near-sound; speaking@1>seeking near-sound
+w089 | Andrée_s_Arctic_balloon_expedition#1 | realistic | neglected>selected near-sound; essential>essence noun-adjective; ineffective>effective prefix; without>within preposition | fix=83:Örnen,
+w090 | Bicycle#1 | realistic | recreation>creation prefix; hardly>hard suffix; 1885>1855 date; although>though function-word; improved>approved prefix; affected>effected near-sound; considerably>considerable suffix
+w091 | Clock#1 | overclick | oldest@1>coldest near-sound
+w092 | Clock#2 | realistic | 15th@1>16th date; 1656>1666 date; accuracy@2>adequacy near-sound; 1840>1814 date; particular>peculiar near-sound
+w093 | Colonization_of_Mars#1 | realistic | towards>toward connected-speech; successfully>successful suffix; precede>proceed near-sound; decrease>increase prefix
+w094 | Comet_Shoemaker_Levy_9#1 | realistic | coverage>courage near-sound; revelations>revolutions near-sound; eleventh>seventh number; four>five number
+w095 | Daylight_saving_time#1 | realistic | reduces>reduced verb-tense; less>more semantic; formerly>formally near-sound; differ>defer near-sound; contradictory>contrary word-family; serve>save connected-speech
+w096 | Digital_audio#1 | realistic | captures>captured verb-tense; amplified>simplified near-sound; innate>inmate near-sound
+w097 | Folding_home#1 | realistic | 40>14 number; October>November date; 2000>2002 date; favorably>favorable suffix | fix=25:BOINC,65:Pande
+w098 | Gas_reinjection#1 | realistic | injected>ejected prefix; than>then connected-speech; increases>increased verb-tense; easier>easily suffix; generally>genuinely near-sound
+w099 | HTTP_cookie#1 | realistic | remember>member prefix; arbitrary>arbitrarily suffix; previously>obviously near-sound; essential>essence noun-adjective; most@2>more suffix; mechanism>mechanic word-family; sensitive>sensible near-sound
+w100 | Peter_principle#1 | realistic | apparent>apparently suffix; promoted@1>promote ed-ending; merely>nearly near-sound; dismissal>disposal near-sound
+w101 | Peyer_s_patch#2 | realistic | fewer>fewest suffix; thinner>thicker semantic; specialized>specialist word-family; permeable>permissible near-sound; exposed>opposed near-sound | fix=97:Peyer's
+w102 | Read_only_memory#1 | realistic | replacing>replaced ing-ending; primary>prime suffix | fix=52:that is
+w103 | Roman_dodecahedron#1 | realistic | vary>very near-sound; misclassified>classified prefix; excavated>evacuated near-sound; estimating>estimated ing-ending | fix=39:Arloff
+w104 | Search_engine_optimization#1 | overclick | improving>approving prefix; relevance>relevant noun-adjective
+w105 | Silo#2 | realistic | low>slow near-sound; conjunction>junction prefix; horizontal>vertical semantic; approximately>appropriately near-sound; 90>19 number; thousands>hundreds number
+w106 | Social_anxiety#3 | realistic | intense>intents near-sound; reduce>produce prefix; individually>individual suffix; through>though function-word
+w107 | Space_elevator#1 | realistic | orbital>orbit noun-adjective; active>actual near-sound; fired>hired near-sound; reversed>reserved near-sound; hundreds>thousands number | fix=73:pellets
+w108 | Stuttering#1 | realistic | parts>ports near-sound; flow>flaw near-sound; cannot>can function-word | fix=29:repetitions
+w109 | Terror_management_theory#1 | realistic | originally>original suffix; proposes>proposed verb-tense; inevitable>invisible near-sound; extent>extend connected-speech; durable>desirable near-sound; literal>liberal near-sound | fix=21:Pyszczynski
+w110 | Terror_management_theory#2 | realistic | individual>individuals singular-plural; buffer>buffet near-sound; 1973>1937 date; grasp>gasp near-sound; They>These function-word; essentially>essential suffix; upon>on preposition
+w111 | Thought#1 | realistic | immediate>intermediate near-sound; my>your function-word; but>and function-word; covered>discovered prefix
+w112 | Tower_of_London#1 | realistic | enduring>endearing near-sound; 16th>17th date; seven>eleven number; notorious>notable near-sound; 400>300 number; latter>later near-sound | fix=89:Salvin
+w113 | Universal_health_care#1 | overclick | imply>apply near-sound; three>two number
+w114 | Visual_impairment#2 | realistic | Diagnosis>Diagnose verb-noun; 80%>18% number; treatment>treatments singular-plural; rehabilitation>habilitation prefix; 2015>2005 date; 246>264 number
+w115 | Zinc#2 | realistic | 10th>12th date; produced>reduced prefix; unknown>known prefix; burned>turned near-sound; discovering>discovery verb-noun | fix=80:Sigismund,81:Marggraf
+w116 | Zinc#1 | overclick | | fix=83:sphalerite
+w117 | Yttrium#1 | overclick | unstable>stable prefix | fix=40:d-block

@@ -13,11 +13,13 @@ daily practice to it.
 
 | Area | Details |
 |---|---|
-| Modes | Guided tracking · Fading guidance · HIW practice · Micro-drills (per trap type) · Recovery (text blackouts) · Over-clicking test (0–2 hidden mismatches) · Exam (countdown, no pause, no hints) · Stress (1.10–1.30×) · Mistake review |
+| Modes | Guided tracking (with "tap the word you just heard" checks) · Fading guidance · HIW practice · Micro-drills (per trap type) · Recovery (text blackouts) · Over-clicking test (10 passages, 0–2 hidden mismatches, verdict) · Exam (no pause, no hints) · Stress (1.10–1.30×) · Mistake review. Practice speeds 0.8–1.3× |
+| Exam-like flow | Every item: status box above the passage ("Beginning in 7 seconds" → Playing → Completed, progress, volume), recording starts by itself, Next under the passage. All HIW items 85–125 words / 32–50 s |
 | Tracking | Desktop: mouse hover. Phone: slide a finger over the text to track (sliding never selects); a quick tap selects. Sampled every 100 ms against the spoken word |
 | Scoring | Hit +1, false click −1, miss 0, floored at 0 — labelled as a simulation, not Pearson scaling. Precision, recall, false-positive rate |
 | Diagnostics | ±1/±2 sync, lag, sync-loss events and recovery time, click latency buckets, per-mismatch "likely cause" (lost sync vs trap type vs late response vs position slip), timeline, snippet replay at 0.8/1.0/1.1× |
-| Adaptive | Rolling weakness detection → daily 15–25 min plan (warm-up → weak drills → realistic → review). Speed only goes up after stable quality at the current speed; drops back if quality falls |
+| Adaptive | Rolling weakness detection → daily 15–25 min plan (warm-up → weak drills → realistic → review → summary). Difficulty levels (easier / exam standard / advanced) by speaking rate and length: drops while sync or precision is weak, rises after 20 stable passages. Speed rises only after stable quality and drops back if quality falls |
+| Reports | End-of-day summary (what improved vs the previous 7 days, what cost the most points, tomorrow's focus) · rolling written diagnosis on Progress |
 | Mistake bank | Misses and false clicks, spaced review at 10 min → 1 day → 3 days → 7 days, reviewed with *different* passages of the same confusion |
 | Content | **28 human-voice items**: excerpts of Spoken Wikipedia recordings (real readers, varied accents, CC BY-SA), word-timed with Whisper, swaps written by hand · plus 34 original passages voiced with Kokoro TTS. Mismatch counts vary 0–7 per item. No Pearson material |
 | Custom | Paste displayed + spoken text → mismatches auto-detected and categorised; browser voice (approximate) or uploaded audio (+ optional timestamps) |
@@ -79,13 +81,17 @@ Real HIW recordings are people reading academic text, so the realistic and exam 
 ```bash
 .venv-tts/bin/pip install faster-whisper
 npm run human:fetch   # download recordings (politely, one at a time), transcribe, propose excerpts
-npm run human:build   # cut clips + apply content/human/items.json → library.json
+npm run human:rewindow # exam-length excerpts from cached transcripts
+npm run human:items   # compile items.txt → items.json
+npm run human:build   # cut clips → library.json (older items are archived, not deleted)
+npm run human:verify  # re-transcribe clips and check alignment
 ```
 
-`fetch` writes `content/human/candidates.json`: sentence-aligned 18–45 s excerpts with word timings,
-the spoken intro skipped, low-confidence words flagged. Swaps are then written by hand in
-[`content/human/items.json`](content/human/items.json); each swap names the word it replaces (`from`) and
-the build fails if it doesn't match. Excerpts with transcription errors that couldn't be verified against
+`fetch` downloads and transcribes recordings; `rewindow` writes `content/human/candidates-exam.json`:
+sentence-aligned exam-length excerpts (85–125 words, 32–50 s) with word timings, the spoken intro skipped,
+low-confidence words flagged. Swaps are written by hand in [`content/human/items.txt`](content/human/items.txt)
+(`spoken>display category`, compiled by `scripts/items_from_text.py`, which rejects ambiguous or missing
+words). `verify` re-transcribes every finished clip and checks its words and timings against the tokens. Excerpts with transcription errors that couldn't be verified against
 the article text were not used, since a mis-transcribed word would show the learner an accidental mismatch.
 
 Licence: the recordings are CC BY-SA; each exercise carries its reader, licence and source link, shown on its

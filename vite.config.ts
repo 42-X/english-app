@@ -31,6 +31,8 @@ export default defineConfig({
       workbox: {
         // App shell + exercise library are precached; audio is cached on first use.
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}', 'content/*.json'],
+        // The exercise library (~2.3 MB, ~400 KB gzipped) must be precached for offline practice.
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         navigateFallback: '/index.html',
         runtimeCaching: [
           {
