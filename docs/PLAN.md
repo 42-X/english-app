@@ -83,12 +83,71 @@ content/         source passages (JSON) → scripts/generate-audio.py → public
     3 guided · 5 easy · 10 realistic · 8 micro-drills · 4 over-click (0–2 mismatches) · 3 recovery
 15. Tests + lint + typecheck + build all green; deployed
 
-### Phase 2 (after tonight)
-- Admin area: token/timestamp editor, publish/unpublish
-- Formal speed-experiment wizard (v1 has per-speed stats + recommendation)
-- More accents (Australian, Indian) and real recorded audio
-- Generated exercises targeting her exact recurring confusions
-- Optional AI coaching behind a service boundary (off by default; no data leaves the device in v1)
+## Gap audit vs Astra's spec (2026-10-06)
+
+Audited against Astra's master build prompt and the Gemini improvement list. Status: ✅ built ·
+🟡 partial · ❌ missing · ⏸ deferred on purpose.
+
+| Spec item | Status | Notes |
+|---|---|---|
+| Modes: guided, fading, easy, micro-drill, recovery, exam, stress | ✅ | All playable; fading thresholds configurable |
+| Tracking mode: "periodically click the currently spoken word to verify sync" | ❌ | Missed. Sync is only measured passively from pointer position |
+| Speeds 0.8×–1.3× | 🟡 | 1.0–1.3× for practice; 0.8×/1.0×/1.1× only for snippet replay. 0.8×/0.9× practice missing |
+| Desktop mouse + mobile finger tracking | ✅ | Tested headless; **not yet tested on a real phone** |
+| Scoring (+1/−1/0), precision, recall, FP rate, net score | ✅ | |
+| Sync metrics (±1/±2, lag, loss events, recovery time) + timeline | ✅ | |
+| Click latency + "missed while synced vs during sync loss" | ✅ | |
+| Error diagnosis categories | 🟡 | Accent-related and unknown-vocabulary are weak (accent unknown for human clips; vocabulary inferred from trap type only). "Several consecutive errors ⇒ flag sync loss" not implemented |
+| Confidence High/Medium/Guess | 🟡 | Post-hoc labelling after each question (spec allowed this). No at-click option. FP-rate-by-confidence not shown separately |
+| Over-clicking test (≈10 passages, 0–1 mismatches, verdict: decision threshold vs discrimination) | 🟡 | 9 single over-click passages exist; **no dedicated test session and no aggregate verdict** — this was Astra's key diagnostic |
+| Adaptive engine: weakness → exercise selection | ✅ | Over-clicking → sparse passages; trap misses → drills; weak sync → guided/fading/recovery; speed step-down |
+| Adaptive: shorten passages when sync is weak, lengthen gradually | ❌ | Missed |
+| Adaptive: raise difficulty after ≥90% precision over 20 passages | ❌ | Only speed progression. `difficulty` field is never used |
+| Micro-drills for every trap category, select one category | 🟡 | Category picker works, but **only 1 dedicated drill per category**; function words and connected speech have **0** items |
+| Mistake bank + spaced review (10 min/1 d/3 d/7 d) | ✅ | |
+| Mistake bank: *new* sentences with the same trap | 🟡 | Reuses other library items with the same trap type — thin because the library is small. No generation |
+| Daily 15–25 min plan, adapts next day | ✅ | |
+| End-of-session summary (what improved / what cost points / tomorrow) | ❌ | Missed. Plan just says "done" |
+| Dashboard last 10/25/50, trends, by trap/speed/mode/accent | 🟡 | All present; by-accent is useless for human clips (labelled "other"); sync-loss rate not shown |
+| Rolling written diagnosis in Chinese ("you catch 84% but 19% of clicks are false…", vs yesterday) | ❌ | Missed. Only per-question coaching and plan focus lines |
+| Speed experiment (equivalent passages at 1.0–1.2×) | 🟡 | By-speed table + recommendation; no guided experiment flow |
+| Real audio, multiple accents, connected speech | 🟡 | 28 human recordings (accents unlabelled) + synthetic US/UK. No Australian/Indian guaranteed |
+| Library size | 🟡 | 62 items. The daily plan uses ~8/day, so she will **repeat passages within about a week** — and a remembered passage is no longer a valid test |
+| Custom exercise creator with auto-diff | ✅ | |
+| Admin area (edit tokens/timestamps, publish/unpublish) | ⏸ | One learner; content lives in repo files. Custom creator covers adding items |
+| Local-first + account sync, keep anonymous history | ✅ | |
+| PWA install/offline | ✅ | Update flow fixed 2026-10-06 (was banner-only, never showed on installed apps) |
+| Session flow Home → warm-up → drill → realistic → review → summary | 🟡 | Summary step missing |
+| Tests for scoring/sync/adaptive, lint, typecheck, build | ✅ | 43 tests |
+| Stack Next.js → Vite; magic link → password | ⏸ | Deliberate: no server code; Supabase's mailer can't reach her inbox |
+
+Outside HIW (from Astra's study advice): her **FIB-L was 16 — as low as HIW** and Astra ranked it priority #1.
+This app trains HIW only.
+
+## Roadmap
+
+### P0 — before sending to her
+- [ ] **Content volume**: ≥120 human-voice items (74 unused candidates + more articles), ≥6 drills per trap category incl. function words, prepositions, connected speech; ≥12 over-click passages
+- [ ] **Automated clip check**: re-transcribe every cut clip and confirm words + timings match the tokens (catches bad cuts/alignment without needing ears)
+- [ ] **Over-clicking diagnostic test**: 10-passage session, count hidden, aggregate report (unnecessary clicks, net impact, confidence pattern) + verdict "decision threshold vs discrimination"
+- [ ] **Tracking checks**: in guided/fading, occasional "tap the word you just heard" prompts; sync accuracy reported
+- [ ] **Session summary** at the end of the daily plan: what improved, what cost the most points, tomorrow's focus
+- [ ] **Rolling written diagnosis** on Progress (zh-TW/en), with change vs previous period
+- [ ] **Difficulty progression**: use `difficulty` + passage length; shorter passages when sync is weak, harder/longer after ≥90% precision over 20
+- [ ] 0.8× / 0.9× practice speeds (learning modes only)
+- [ ] Consecutive-error sync-loss flag; FP rate by confidence; sync-loss rate on dashboard
+- [ ] Accent labels for human recordings where the reader's accent can be determined
+- [ ] Real-phone test (iPhone Safari + installed app): audio start, finger tracking, update applies
+
+### P1 — soon after
+- [ ] FIB-L trainer (same audio + timestamp engine; type the missing words, spelling-aware scoring)
+- [ ] Mistake-bank generated examples (new sentences per confusion pair, synthesised offline)
+- [ ] Guided speed-experiment flow
+- [ ] At-click confidence option (desktop modifier keys)
+
+### P2 — later
+- [ ] Admin/content editor (tokens, timestamps, publish)
+- [ ] Optional AI coaching behind a service boundary (off by default)
 
 ## Build order
 
