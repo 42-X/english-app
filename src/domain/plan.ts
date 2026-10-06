@@ -12,6 +12,10 @@ export interface PlanInput {
   now: number
 }
 
+export function isHuman(ex: Exercise): boolean {
+  return ex.tags.includes('human-audio')
+}
+
 export function hasTrap(ex: Exercise, cat: TrapCategory): boolean {
   return ex.tokens.some((t) => t.isIncorrect && t.trapCategory === cat)
 }
@@ -53,8 +57,9 @@ export function buildDailyPlan(input: PlanInput): DailyPlan {
 
   // 2. Weak-category micro-drills (~5 min).
   if (has('overclicking')) {
-    add(pick(ofKind('overclick')), 'overclick', 'drill', 'overclick')
-    add(pick(ofKind('overclick')), 'overclick', 'drill', 'overclick')
+    const oc = (e: Exercise) => e.kind === 'overclick'
+    add(pick((e) => oc(e) && isHuman(e)) ?? pick(oc), 'overclick', 'drill', 'overclick')
+    add(pick((e) => oc(e) && isHuman(e)) ?? pick(oc), 'overclick', 'drill', 'overclick')
   }
   for (const f of trapFoci.slice(0, has('overclicking') ? 1 : 2)) {
     add(pick((e) => e.kind === 'drill' && hasTrap(e, f.category)) ?? pick((e) => hasTrap(e, f.category)), 'drill', 'drill', `trap:${f.category}`)
@@ -64,10 +69,11 @@ export function buildDailyPlan(input: PlanInput): DailyPlan {
   if (has('discrimination') && trapFoci.length === 0) add(pick(ofKind('drill')), 'drill', 'drill', 'discrimination')
   if (!items.some((i) => i.block === 'drill')) add(pick(ofKind('drill')), 'drill', 'drill', 'variety')
 
-  // 3. Realistic HIW (~7–10 min); the last one under exam conditions.
-  add(pick(ofKind('realistic')), 'practice', 'realistic', 'realistic')
-  add(pick(ofKind('realistic', 'overclick')), 'practice', 'realistic', 'realistic')
-  add(pick(ofKind('realistic')), 'exam', 'realistic', 'exam')
+  // 3. Realistic HIW (~7–10 min); the last one under exam conditions. Human recordings first.
+  const human = (...kinds: ExerciseKind[]) => (e: Exercise) => kinds.includes(e.kind) && isHuman(e)
+  add(pick(human('realistic')) ?? pick(ofKind('realistic')), 'practice', 'realistic', 'realistic')
+  add(pick(human('realistic', 'overclick')) ?? pick(ofKind('realistic', 'overclick')), 'practice', 'realistic', 'realistic')
+  add(pick(human('realistic')) ?? pick(ofKind('realistic')), 'exam', 'realistic', 'exam')
 
   // 4. Mistake-bank review (~3–5 min) with *new* examples of the same confusions.
   const due = input.mistakes.filter((m) => isDue(m, now))

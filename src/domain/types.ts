@@ -68,6 +68,8 @@ export interface Exercise {
   timing: TimingQuality
   tokens: Token[]
   tags: string[]
+  /** Attribution for third-party recordings (required by their licence). */
+  credit?: { work: string; author: string; license: string; url?: string; note?: string }
   /** True for learner-created exercises. */
   custom?: boolean
   createdAt?: number

@@ -222,6 +222,20 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
         <ReviewTranscript ex={ex} decorate={guided ? () => undefined : decorate} />
       </Card>
 
+      {ex.credit && (
+        <p className="text-xs text-ink-3">
+          {t('results.audioCredit')}: {ex.credit.work} — {ex.credit.author},{' '}
+          {ex.credit.url ? (
+            <a className="underline" href={ex.credit.url} target="_blank" rel="noreferrer">
+              {ex.credit.license}
+            </a>
+          ) : (
+            ex.credit.license
+          )}
+          . {ex.credit.note}
+        </p>
+      )}
+
       <div className="flex flex-wrap gap-2 pb-4">
         {nextItem ? (
           <ButtonLink variant="primary" to={`/play/${nextItem.exerciseId}?mode=${nextItem.mode}&speed=${nextItem.speed}&plan=${plan!.id}`} replace>

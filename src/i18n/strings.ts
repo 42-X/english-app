@@ -246,6 +246,7 @@ const zh = {
   'results.blackouts': '畫面消失後找回位置：{list}',
   'results.notRecovered': '未找回',
   'results.guidedOnly': '這是追蹤練習，不計分。',
+  'results.audioCredit': '音檔來源',
 
   'practice.title': '練習',
   'practice.chooseMode': '選擇模式',
@@ -256,6 +257,7 @@ const zh = {
   'practice.categories': '陷阱類型',
   'practice.allCategories': '全部',
   'practice.custom': '我的自訂題目',
+  'practice.humanVoice': '真人錄音',
   'practice.stressSpeed': '壓力測試速度',
   'practice.speedNote': '模擬考固定 1.0x；引導與漸退模式固定 1.0x。',
 
@@ -357,7 +359,7 @@ const zh = {
   'settings.imported': '已匯入 {n} 筆資料',
   'settings.importFailed': '匯入失敗：檔案格式不正確',
   'settings.about': '關於',
-  'settings.aboutAudio': '內建題目為原創段落，語音由開源 Kokoro TTS 合成，附精確單字時間戳。非 Pearson 官方題目。',
+  'settings.aboutAudio': '「真人錄音」題目取自 Spoken Wikipedia（CC BY-SA）志願者朗讀的維基百科條目，擷取片段後修改畫面上的字。其餘題目為原創段落，以開源 Kokoro TTS 合成。皆非 Pearson 官方題目。',
   'settings.aboutPrivacy': '所有分析都在你的裝置上計算，不會傳送到任何 AI 服務。',
   'settings.authError': '登入失敗：{error}',
   'settings.install': '安裝到主畫面',
@@ -614,6 +616,7 @@ const en: Record<StringKey, string> = {
   'results.blackouts': 'Recovery after blackouts: {list}',
   'results.notRecovered': 'not recovered',
   'results.guidedOnly': 'Tracking practice — not scored.',
+  'results.audioCredit': 'Audio',
 
   'practice.title': 'Practice',
   'practice.chooseMode': 'Choose a mode',
@@ -624,6 +627,7 @@ const en: Record<StringKey, string> = {
   'practice.categories': 'Trap types',
   'practice.allCategories': 'All',
   'practice.custom': 'My custom exercises',
+  'practice.humanVoice': 'Human voice',
   'practice.stressSpeed': 'Stress speed',
   'practice.speedNote': 'Exam, guided and fading modes always run at 1.0×.',
 
@@ -725,7 +729,7 @@ const en: Record<StringKey, string> = {
   'settings.imported': 'Imported {n} records',
   'settings.importFailed': 'Import failed: not a valid backup file',
   'settings.about': 'About',
-  'settings.aboutAudio': 'Built-in passages are original; audio is synthesised with open-source Kokoro TTS with exact word timestamps. Not official Pearson material.',
+  'settings.aboutAudio': '“Human voice” items are excerpts of Spoken Wikipedia recordings (volunteers reading Wikipedia articles, CC BY-SA) with on-screen words altered for practice; each result page credits its reader. Other passages are original, voiced with open-source Kokoro TTS. None are official Pearson material.',
   'settings.aboutPrivacy': 'All analysis runs on your device. Nothing is sent to any AI service.',
   'settings.authError': 'Sign-in failed: {error}',
   'settings.install': 'Install to home screen',

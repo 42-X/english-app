@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useAppState } from '../../app/state'
 import { recentAttempts } from '../../data/repo'
 import { trapStats } from '../../domain/adaptive'
-import { hasTrap } from '../../domain/plan'
+import { hasTrap, isHuman } from '../../domain/plan'
 import { TRAP_CATEGORIES, type Attempt, type Exercise, type Mode, type TrapCategory } from '../../domain/types'
 import { useI18n } from '../../i18n'
 import { pct, secs, speedLabel } from '../../ui/format'
@@ -40,7 +40,7 @@ export function PracticePage() {
     }
     const rank = (e: Exercise) => {
       const k = rules.kinds.indexOf(e.kind)
-      return k < 0 ? 99 : k
+      return (k < 0 ? 99 : k) * 2 + (isHuman(e) ? 0 : 1)
     }
     return [...l].sort((a, b) => rank(a) - rank(b) || a.id.localeCompare(b.id))
   }, [exercises, rules, mode, cat])
@@ -127,6 +127,7 @@ export function PracticePage() {
                       <span>{e.topic}</span>
                       <span>· {e.accent}</span>
                       <span>· {secs(e.durationMs, 0)}</span>
+                      {isHuman(e) && <Badge tone="good">{t('practice.humanVoice')}</Badge>}
                       {e.custom && <Badge tone="accent">{t('nav.create')}</Badge>}
                       {e.timing !== 'exact' && <Badge tone="warn">{t('common.approx')}</Badge>}
                     </div>

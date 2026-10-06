@@ -19,7 +19,7 @@ daily practice to it.
 | Diagnostics | ±1/±2 sync, lag, sync-loss events and recovery time, click latency buckets, per-mismatch "likely cause" (lost sync vs trap type vs late response vs position slip), timeline, snippet replay at 0.8/1.0/1.1× |
 | Adaptive | Rolling weakness detection → daily 15–25 min plan (warm-up → weak drills → realistic → review). Speed only goes up after stable quality at the current speed; drops back if quality falls |
 | Mistake bank | Misses and false clicks, spaced review at 10 min → 1 day → 3 days → 7 days, reviewed with *different* passages of the same confusion |
-| Content | 34 original passages (no Pearson material) across 15 topics, US + UK voices, generated with open-source Kokoro TTS **with exact per-word timestamps** |
+| Content | **28 human-voice items**: excerpts of Spoken Wikipedia recordings (real readers, varied accents, CC BY-SA), word-timed with Whisper, swaps written by hand · plus 34 original passages voiced with Kokoro TTS. Mismatch counts vary 0–7 per item. No Pearson material |
 | Custom | Paste displayed + spoken text → mismatches auto-detected and categorised; browser voice (approximate) or uploaded audio (+ optional timestamps) |
 
 ## Run locally
@@ -72,7 +72,26 @@ members unless custom SMTP is configured, so magic links would not reach learner
 Free-tier note: Supabase pauses projects after ~7 days without any requests. Daily practice keeps it awake;
 if it pauses, restore it from the dashboard — local data on each device is unaffected.
 
-## Content pipeline
+## Human-voice items (Spoken Wikipedia)
+
+Real HIW recordings are people reading academic text, so the realistic and exam slots prefer these.
+
+```bash
+.venv-tts/bin/pip install faster-whisper
+npm run human:fetch   # download recordings (politely, one at a time), transcribe, propose excerpts
+npm run human:build   # cut clips + apply content/human/items.json → library.json
+```
+
+`fetch` writes `content/human/candidates.json`: sentence-aligned 18–45 s excerpts with word timings,
+the spoken intro skipped, low-confidence words flagged. Swaps are then written by hand in
+[`content/human/items.json`](content/human/items.json); each swap names the word it replaces (`from`) and
+the build fails if it doesn't match. Excerpts with transcription errors that couldn't be verified against
+the article text were not used, since a mis-transcribed word would show the learner an accidental mismatch.
+
+Licence: the recordings are CC BY-SA; each exercise carries its reader, licence and source link, shown on its
+results page. The cut clips are adaptations and remain CC BY-SA.
+
+## Content pipeline (synthetic passages)
 
 Passages live in [`content/passages.json`](content/passages.json). Mismatches are written inline as
 `[displayed|spoken:trap-category]`:
@@ -110,6 +129,7 @@ src/i18n/       zh-TW + en dictionaries
 
 - Custom exercises using the browser voice or uploaded audio without timestamps: word timing is estimated,
   so sync/latency numbers are flagged as approximate in the UI.
+- Human-voice word timings come from Whisper's alignment; synthetic ones from Kokoro's. Both are machine-checked for order and plausible durations, not hand-verified by ear.
 - Kokoro word timestamps come from the TTS model's own alignment. They are machine-checked for order and plausible durations, but not hand-verified by ear.
 - The exam layout approximates the test's density; it is not pixel-verified against Pearson's UI.
 - "Likely cause" labels are heuristics from timing + trap type, never definitive claims.

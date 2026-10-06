@@ -33,3 +33,7 @@ supabase/.temp/
 
 .dev.vars*
 !.dev.vars.example
+
+# Downloaded source recordings (re-fetchable)
+.cache/
+__pycache__/

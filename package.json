@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "preview": "vite preview",
     "audio": ".venv-tts/bin/python scripts/generate_audio.py",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "human:fetch": ".venv-tts/bin/python scripts/build_human_audio.py fetch",
+    "human:build": ".venv-tts/bin/python scripts/build_human_audio.py build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
