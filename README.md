@@ -36,18 +36,20 @@ Checks:
 npm run lint && npm run typecheck && npm test && npm run build
 ```
 
-## Deploy (Cloudflare Pages)
+## Deploy (Cloudflare)
 
-The app is a static site (`dist/`). Cloudflare Pages serves `index.html` for unknown paths, so client
-routing works with no extra config.
+Live: **https://hiw-trainer.hiw-trainer.workers.dev**
+
+The app is a static site served by Cloudflare's static-assets hosting (the successor to Pages);
+[`wrangler.jsonc`](wrangler.jsonc) points it at `dist/` with single-page-app fallback. There is no server code.
 
 ```bash
-npm run build
-npx wrangler pages deploy dist --project-name hiw-trainer
+npx wrangler login   # once
+npm run deploy       # build + upload
 ```
 
-`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are baked in at build time from `.env.local`.
-Any static host works (Vercel, Netlify) — add an SPA fallback to `/index.html` there.
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are baked in at build time from `.env.local`, so deploy
+from a machine that has it. Any static host works (Vercel, Netlify) with an SPA fallback to `/index.html`.
 
 ## Cloud sync (Supabase)
 

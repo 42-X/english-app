@@ -13,7 +13,7 @@ accuracy first, synchronization second, speed only after both are stable.
 | Audio | Kokoro-82M (open-source TTS, run offline at build time) | Real neural voices **with exact word timestamps**, free, no API key; US + UK voices |
 | Fallback audio | Browser speechSynthesis | Custom exercises only; analytics flagged *approximate* |
 | Tests | Vitest | Scoring, sync math, adaptive engine |
-| Hosting | Cloudflare Pages (static) | Unlimited free bandwidth, commercial use allowed on free tier |
+| Hosting | Cloudflare static assets (Workers) | Unlimited free bandwidth, commercial use allowed on free tier |
 | Sync | Supabase (email+password auth, Postgres, RLS) | Built in v1 at owner's request; project `hiw-trainer` |
 
 ## Architecture
@@ -140,9 +140,9 @@ content/         source passages (JSON) → scripts/generate-audio.py → public
 - [ ] Every mismatch token's timing lines up with the audio (spot-check 5 passages)
 
 ### Launch
-- [ ] Deployed to Cloudflare Pages production URL
+- [x] Deployed: https://hiw-trainer.hiw-trainer.workers.dev
 - [ ] Opened on her phone + laptop, installed as app
-- [ ] Code pushed to github.com/42-X/english-app (needs 42-X SSH key added — see below)
+- [x] Code pushed to github.com/42-X/english-app
 - [ ] Phase 2 list captured as GitHub issues (optional)
 
 ### Owner to-dos
