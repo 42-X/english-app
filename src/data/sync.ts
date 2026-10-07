@@ -54,6 +54,9 @@ async function syncTable(client: SupabaseClient, userId: string, name: SyncedTab
     const { data, error } = await client
       .from(remote)
       .select('id,data,updated_at,deleted,server_updated_at')
+      // Only this account's rows: a coach can also read their learners' rows, which must never
+      // be merged into the coach's own history.
+      .eq('user_id', userId)
       .gt('server_updated_at', since)
       .order('server_updated_at')
       .range(page * 500, page * 500 + 499)

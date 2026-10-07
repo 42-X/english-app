@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, NavLink, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { startAutoSync } from '../data/sync'
+import { CoachPage } from '../features/coach/CoachPage'
 import { CreatePage } from '../features/create/CreatePage'
 import { HomePage } from '../features/home/HomePage'
 import { MistakesPage } from '../features/mistakes/MistakesPage'
@@ -34,7 +35,8 @@ function Localized() {
     if (settings.theme === 'system') root.removeAttribute('data-theme')
     else root.setAttribute('data-theme', settings.theme)
     root.lang = settings.language
-  }, [settings.theme, settings.language])
+    root.dataset.textSize = settings.textSize
+  }, [settings.theme, settings.language, settings.textSize])
 
   useEffect(() => startAutoSync(), [])
 
@@ -58,6 +60,7 @@ function Localized() {
             <Route path="/progress" element={<ProgressPage />} />
             <Route path="/create" element={<CreatePage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/coach" element={<CoachPage />} />
             <Route path="*" element={<HomePage />} />
           </Route>
         </Routes>

@@ -14,6 +14,7 @@ import { VocabList } from '../vocab/VocabList'
 import { WordSheet, type WordTarget } from '../vocab/WordSheet'
 import { liveVocab } from '../../data/repo'
 import { Replay } from '../results/ResultsPage'
+import { HearDifference } from '../results/HearDifference'
 
 /** Pick a review exercise: same confusion, preferably a different passage, least recently used. */
 function pickReview(due: MistakeItem[], exercises: Exercise[], lastDone: Map<string, number>): Exercise | undefined {
@@ -155,15 +156,28 @@ function MistakeBank() {
                       {m.lapses > 0 && <span className="text-xs text-ink-3">{t('mistakes.lapses', { n: m.lapses })}</span>}
                     </div>
                   </div>
-                  {ex && <Replay ex={ex} index={m.tokenIndex} />}
-                  <Button
-                    className="px-2.5 py-1 text-xs"
-                    title={t('vocab.lookUp')}
-                    aria-label={t('vocab.lookUp')}
-                    onClick={() => setWordTarget({ word: m.spoken, context: m.context.replace(/[[\]]/g, ''), exerciseId: m.exerciseId, tokenIndex: m.tokenIndex })}
-                  >
-                    📖
-                  </Button>
+                  {m.type === 'miss' ? (
+                    <div className="w-full">
+                      <HearDifference
+                        shown={m.display}
+                        said={m.spoken}
+                        ex={ex}
+                        index={m.tokenIndex}
+                        context={m.context.replace(/[[\]]/g, '')}
+                        onLookUp={setWordTarget}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      {ex && <Replay ex={ex} index={m.tokenIndex} />}
+                      <Button
+                        className="px-2.5 py-1 text-xs"
+                        onClick={() => setWordTarget({ word: m.spoken, context: m.context.replace(/[[\]]/g, ''), exerciseId: m.exerciseId, tokenIndex: m.tokenIndex })}
+                      >
+                        {t('hear.lookUp')}
+                      </Button>
+                    </>
+                  )}
                   <Button variant="ghost" className="px-2 text-xs" onClick={() => void deleteMistake(m.id).then(requestSync)} aria-label={t('common.delete')}>
                     ✕
                   </Button>

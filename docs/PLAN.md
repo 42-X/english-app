@@ -245,3 +245,16 @@ own recent average and always offers a next step.
 - [x] Day report → "Today's wins" (whole day, improvements only, "+N pts" opportunities instead of red losses)
 - [x] Focus/coaching copy reworded as next skills; mistake bank shown as next session size + words mastered
 
+### Learner feedback round 4 (2026-10-06)
+- [x] Hear the difference: every missed word plays the on-screen word and the spoken word (alone or back to back),
+  the recording clip, and opens the word popup for either word (popup has "Compare with …"). Also in Review and Quick review
+- [x] Clear "Look up" buttons instead of the 📖 icon (rendered as a grey box)
+- [x] Changes of mind: results explain unclicks that saved a point vs undid a correct click; coach view totals them
+- [x] Coach view (/coach): learner shares read-only access by the coach's account email (Settings → Share my progress);
+  coach sees effort, skills, by-day table, recent results, sends notes shown on her Home; "Copy summary for Claude"
+- [x] Sync pulls only the signed-in account's rows (coaches can read learners' rows)
+- [x] 58 more "different word" (near-synonym) swaps: 5% → 18% of mismatches; audio unchanged
+- [x] Text size setting (default 19 px exam text, was 15.5 px)
+- [x] Clicks: mouse selects on press (moving cursor no longer drops clicks), roomier touch taps, gaps between words snap
+  to the nearest word, no double-tap zoom
+

@@ -134,36 +134,38 @@ body {
 
 /* ── Transcript ─────────────────────────────────────────── */
 
+/* Passage text size (Settings → Text size). "large" is the default. */
+:root {
+  --exam-size: 19px;
+  --training-size: 1.3rem;
+}
+:root[data-text-size='normal'] {
+  --exam-size: 16.5px;
+  --training-size: 1.15rem;
+}
+:root[data-text-size='xlarge'] {
+  --exam-size: 22px;
+  --training-size: 1.5rem;
+}
+
 .transcript-training {
-  font-size: 1.2rem;
+  font-size: var(--training-size);
   line-height: 2.15;
   letter-spacing: 0.005em;
 }
-@media (max-width: 640px) {
-  .transcript-training {
-    font-size: 1.08rem;
-    line-height: 2.05;
-  }
-}
-/* Exam-like: compact Arial, close to the test's density (not pixel-verified). */
+/* Exam-like: Arial, close to the test's look (not pixel-verified). */
 .transcript-exam {
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 15.5px;
-  line-height: 1.85;
-}
-/* Phones: same exam typography, sized for finger taps. */
-@media (pointer: coarse) {
-  .transcript-exam {
-    font-size: 16.5px;
-    line-height: 1.9;
-  }
+  font-size: var(--exam-size);
+  line-height: 1.95;
 }
 
 .word {
   position: relative;
   border-radius: 3px;
-  padding: 0.05em 0.08em;
-  margin: 0 -0.08em;
+  /* Generous hit area so a click between letters or at a word's edge still lands on the word. */
+  padding: 0.12em 0.14em;
+  margin: 0 -0.14em;
   transition: background-color 60ms;
 }
 .word-selected {

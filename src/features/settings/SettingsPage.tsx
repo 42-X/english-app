@@ -1,6 +1,8 @@
 import type { User } from '@supabase/supabase-js'
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAppState } from '../../app/state'
+import { addCoach, myCoaches, removeCoach, type CoachLink } from '../../data/coach'
 import { exportBackup, importBackup } from '../../data/repo'
 import { getSyncStatus, onSyncStatus, supabase, syncConfigured, syncNow, type SyncStatus } from '../../data/sync'
 import { SPEEDS } from '../../domain/types'
@@ -58,6 +60,13 @@ export function SettingsPage() {
               value={settings.theme}
               onChange={(v) => void updateSettings({ theme: v })}
               options={(['system', 'light', 'dark'] as const).map((v) => ({ value: v, label: t(`settings.theme.${v}`) }))}
+            />
+          </Row>
+          <Row label={t('settings.textSize')}>
+            <Segmented
+              value={settings.textSize}
+              onChange={(v) => void updateSettings({ textSize: v })}
+              options={(['normal', 'large', 'xlarge'] as const).map((v) => ({ value: v, label: t(`settings.textSize.${v}`) }))}
             />
           </Row>
           <Row label={t('settings.speed')} note={t('settings.speedNote')}>
@@ -205,6 +214,7 @@ function AccountPanel() {
             {t('settings.signOut')}
           </Button>
         </div>
+        <SharePanel />
       </div>
     )
   }
@@ -240,5 +250,66 @@ function AccountPanel() {
         </Button>
       </div>
     </form>
+  )
+}
+
+/** Share read-only progress with a coach (by their account email); coaches open the coach view. */
+function SharePanel() {
+  const { t } = useI18n()
+  const [coaches, setCoaches] = useState<CoachLink[] | null>(null)
+  const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
+  const [err, setErr] = useState('')
+  const load = () => void myCoaches().then(setCoaches, (e: Error) => setErr(e.message))
+  useEffect(load, [])
+
+  const add = async () => {
+    setErr('')
+    try {
+      await addCoach(email, name)
+      setEmail('')
+      load()
+    } catch (e) {
+      setErr((e as Error).message)
+    }
+  }
+  const input = 'w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none sm:w-60'
+  return (
+    <div className="mt-2 space-y-3 border-t border-line pt-4">
+      <h3 className="text-sm font-semibold text-ink">{t('share.title')}</h3>
+      <p className="text-sm text-ink-2">{t('share.note')}</p>
+      {coaches && coaches.length > 0 && (
+        <ul className="space-y-1">
+          {coaches.map((c) => (
+            <li key={c.coach_email} className="flex items-center justify-between gap-2 text-sm">
+              <span className="text-ink">✓ {c.coach_email}</span>
+              <Button variant="ghost" className="px-2 text-xs" onClick={() => void removeCoach(c.coach_email).then(load)}>
+                {t('share.stop')}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <form
+        className="flex flex-wrap gap-2"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void add()
+        }}
+      >
+        <input className={input} type="email" placeholder={t('share.coachEmail')} value={email} onChange={(e) => setEmail(e.target.value)} required />
+        {!coaches?.length && <input className={input} placeholder={t('share.yourName')} value={name} onChange={(e) => setName(e.target.value)} />}
+        <Button type="submit" disabled={!email.includes('@')}>
+          {t('share.add')}
+        </Button>
+      </form>
+      {err && <p className="text-sm text-bad">{err}</p>}
+      <p className="text-xs text-ink-3">
+        {t('share.coachHint')}{' '}
+        <Link className="text-accent underline" to="/coach">
+          {t('share.coachView')} →
+        </Link>
+      </p>
+    </div>
   )
 }

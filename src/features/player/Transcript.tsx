@@ -30,12 +30,17 @@ export interface TranscriptProps {
   renderWord?: (t: Token) => React.ReactNode
 }
 
-const TAP_MAX_MOVE = 10
-const TAP_MAX_MS = 350
+// A finger tap may wobble and linger a little; anything beyond this is a slide (tracking), not a tap.
+const TAP_MAX_MOVE = 18
+const TAP_MAX_MS = 600
 
+/** The word under a point — or, in the gap between two words, the nearest one. */
 function tokenAt(x: number, y: number): number | null {
-  const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-i]')
-  return el ? Number(el.dataset.i) : null
+  for (const [dx, dy] of [[0, 0], [-5, 0], [5, 0], [-10, 0], [10, 0], [0, -6], [0, 6]]) {
+    const el = document.elementFromPoint(x + dx, y + dy)?.closest<HTMLElement>('[data-i]')
+    if (el) return Number(el.dataset.i)
+  }
+  return null
 }
 
 export function Transcript(p: TranscriptProps) {
@@ -67,15 +72,19 @@ export function Transcript(p: TranscriptProps) {
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!p.interactive && !p.tracking) return
     const i = tokenAt(e.clientX, e.clientY)
-    down.current = { x: e.clientX, y: e.clientY, t: performance.now(), i, type: e.pointerType, moved: false }
-    if (e.pointerType !== 'mouse') {
-      try {
-        root.current?.setPointerCapture(e.pointerId)
-      } catch {
-        // Not all pointers can be captured (e.g. synthetic events); tracking still works via elementFromPoint.
-      }
-      report(e, i)
+    if (e.pointerType === 'mouse') {
+      // Mouse: select the moment the button goes down. Waiting for the release dropped clicks
+      // whenever the cursor was still moving along with the audio.
+      if (e.button === 0 && p.interactive && i !== null) p.onToggle?.(i)
+      return
     }
+    down.current = { x: e.clientX, y: e.clientY, t: performance.now(), i, type: e.pointerType, moved: false }
+    try {
+      root.current?.setPointerCapture(e.pointerId)
+    } catch {
+      // Not all pointers can be captured (e.g. synthetic events); tracking still works via elementFromPoint.
+    }
+    report(e, i)
   }
 
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -93,12 +102,9 @@ export function Transcript(p: TranscriptProps) {
     const d = down.current
     down.current = null
     if (!d || !p.interactive || d.i === null) return
-    const moved = d.moved || Math.hypot(e.clientX - d.x, e.clientY - d.y) > (d.type === 'mouse' ? 6 : TAP_MAX_MOVE)
-    const quick = d.type === 'mouse' || performance.now() - d.t <= TAP_MAX_MS
-    if (!moved && quick) {
-      // A tap must land on the same word it started on.
-      if (tokenAt(e.clientX, e.clientY) === d.i) p.onToggle?.(d.i)
-    }
+    const moved = d.moved || Math.hypot(e.clientX - d.x, e.clientY - d.y) > TAP_MAX_MOVE
+    // A short, still touch is a tap on the word where the finger came down.
+    if (!moved && performance.now() - d.t <= TAP_MAX_MS) p.onToggle?.(d.i)
   }
 
   const exam = p.layout === 'exam'
@@ -108,7 +114,8 @@ export function Transcript(p: TranscriptProps) {
       className={[
         'relative select-none',
         exam ? 'transcript-exam' : 'transcript-training',
-        p.tracking ? 'touch-none' : '',
+        // No double-tap zoom: on phones it delays or swallows quick taps on words.
+        p.tracking ? 'touch-none' : p.interactive ? 'touch-manipulation' : '',
         p.interactive ? 'cursor-pointer' : '',
       ].join(' ')}
       onPointerDown={onPointerDown}

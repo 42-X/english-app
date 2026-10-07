@@ -111,8 +111,8 @@ function FiblReview({ a, onWord }: { a: ListeningAttempt; onWord: (w: WordTarget
                     ▶ {r}×
                   </Button>
                 ))}
-                <Button className="px-2.5 py-1 text-xs" aria-label={t('vocab.lookUp')} onClick={() => onWord({ word: it.expected, exerciseId: ex.id, tokenIndex: Number(it.ref) })}>
-                  📖
+                <Button className="px-2.5 py-1 text-xs" onClick={() => onWord({ word: it.expected, exerciseId: ex.id, tokenIndex: Number(it.ref) })}>
+                  {t('hear.lookUp')}
                 </Button>
               </div>
             </li>
@@ -120,7 +120,7 @@ function FiblReview({ a, onWord }: { a: ListeningAttempt; onWord: (w: WordTarget
         </ul>
       </Card>
       <Card title={t('results.transcript')}>
-        <p className="transcript-training text-[1.05rem]! leading-[2.2]!">
+        <p className="transcript-training leading-[2.2]!">
           {ex.tokens.map((tok) => {
             const it = byIndex.get(tok.index)
             return (

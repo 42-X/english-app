@@ -11,6 +11,7 @@ import { sameWord } from '../../domain/listening'
 import { RAW_INPUT } from '../listening/FiblPlayer'
 import { WordSheet, type WordTarget } from '../vocab/WordSheet'
 import { useKeepGoing } from '../home/keepGoing'
+import { HearDifference } from '../results/HearDifference'
 
 /** Due items first, then the least-practised; mastered items last. */
 function order(items: MistakeItem[], now: number): MistakeItem[] {
@@ -150,6 +151,7 @@ export function QuickReview() {
                 </>
               )}
             </div>
+            {!fp && <HearDifference shown={card.display} said={card.spoken} index={card.tokenIndex} context={card.context.replace(/[[\]]/g, '')} onLookUp={setWord} />}
             <div className="grid grid-cols-2 gap-2">
               <Button className="py-3" onClick={() => void grade(false)}>
                 ✗ {t('quick.hard')}
@@ -158,9 +160,11 @@ export function QuickReview() {
                 ✓ {t('quick.gotIt')}
               </Button>
             </div>
-            <Button variant="ghost" className="w-full" onClick={() => setWord({ word: card.spoken, context: card.context.replace(/[[\]]/g, ''), exerciseId: card.exerciseId, tokenIndex: card.tokenIndex })}>
-              📖 {t('quick.dontKnow')}
-            </Button>
+            {fp && (
+              <Button variant="ghost" className="w-full" onClick={() => setWord({ word: card.spoken, context: card.context.replace(/[[\]]/g, ''), exerciseId: card.exerciseId, tokenIndex: card.tokenIndex })}>
+                {t('quick.dontKnow')}
+              </Button>
+            )}
           </div>
         )}
       </Card>

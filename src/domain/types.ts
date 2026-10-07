@@ -245,6 +245,8 @@ export interface Settings {
   liveCoaching: boolean
   /** "Beginning in N seconds" before every recording, like the exam. */
   countdownSec: number
+  /** Passage text size. */
+  textSize: 'normal' | 'large' | 'xlarge'
   updatedAt: number
 }
 

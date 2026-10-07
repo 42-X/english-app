@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppState } from '../../app/state'
+import { markNoteRead, unreadNotes, type CoachNote } from '../../data/coach'
 import { db } from '../../data/db'
 import { addListeningToPlan, isOnboarded, trimPlan, liveMistakes, liveVocab, markOnboarded, recentAttempts, recentListening, startOverclickTest, todaysPlan } from '../../data/repo'
 import { requestSync } from '../../data/sync'
@@ -92,6 +93,8 @@ export function HomePage() {
         </Card>
       )}
 
+      <CoachNotes />
+
       <Momentum days={days} now={now} lifetime={lifetime.caught + lifetime.written} today={today} />
 
       <Quest plan={plan} todayMinutes={today.minutes} todayPoints={today.caught + today.written} onKeepGoing={() => void keepGoing()} />
@@ -165,6 +168,43 @@ export function HomePage() {
           ↻ {t('home.regenerate')}
         </Button>
       </Disclosure>
+    </div>
+  )
+}
+
+/** Unread notes from her coach, newest first, until she taps "Thanks". Online only; silent otherwise. */
+function CoachNotes() {
+  const { t } = useI18n()
+  const [notes, setNotes] = useState<CoachNote[]>([])
+  useEffect(() => {
+    let live = true
+    unreadNotes().then(
+      (n) => live && setNotes(n),
+      () => {},
+    )
+    return () => {
+      live = false
+    }
+  }, [])
+  if (!notes.length) return null
+  return (
+    <div className="space-y-2">
+      {notes.map((n) => (
+        <section key={n.id} className="rounded-xl border border-accent bg-accent-soft p-4">
+          <div className="text-xs font-semibold text-accent">💬 {t('coachNote.title')}</div>
+          <p className="mt-1 text-sm leading-relaxed whitespace-pre-wrap text-ink">{n.body}</p>
+          <Button
+            variant="primary"
+            className="mt-3 px-3 py-1.5"
+            onClick={() => {
+              setNotes((xs) => xs.filter((x) => x.id !== n.id))
+              void markNoteRead(n.id).catch(() => {})
+            }}
+          >
+            {t('coachNote.thanks')}
+          </Button>
+        </section>
+      ))}
     </div>
   )
 }

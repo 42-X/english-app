@@ -6,7 +6,7 @@ import { playSnippet, stopSnippet } from '../../audio/engine'
 import { db } from '../../data/db'
 import { recentAttempts, updateConfidence } from '../../data/repo'
 import { requestSync } from '../../data/sync'
-import { falsePositiveRows, mismatchRows, type Cause } from '../../domain/analysis'
+import { falsePositiveRows, mindChanges, mismatchRows, type Cause } from '../../domain/analysis'
 import { attemptCoaching } from '../../domain/coaching'
 import { hiwMood } from '../../domain/momentum'
 import { blackoutRecoveries } from '../../domain/sync'
@@ -16,6 +16,7 @@ import { pct, secs, signed, speedLabel } from '../../ui/format'
 import { Badge, Button, ButtonLink, Card, CoachLine, Disclosure, Stat } from '../../ui/kit'
 import { playLink } from '../home/HomePage'
 import { useKeepGoing } from '../home/keepGoing'
+import { HearDifference } from './HearDifference'
 import { Timeline } from './Timeline'
 import { WordSheet, type WordTarget } from '../vocab/WordSheet'
 import { contextAround } from '../../domain/analysis'
@@ -38,6 +39,8 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
   const guided = attempt.mode === 'guided'
   const rows = useMemo(() => mismatchRows(ex, attempt), [ex, attempt])
   const fps = useMemo(() => falsePositiveRows(ex, attempt), [ex, attempt])
+  const mind = useMemo(() => mindChanges(ex, attempt.interactions), [ex, attempt])
+  const word = (i: number) => `“${ex.tokens[i]?.displayText}”`
   const lines = attemptCoaching(s, rows, fps, attempt.confidence, guided)
   // One thing to work on: the most important non-praise line.
   const tip = lines.find((l) => l.tone === 'warn') ?? lines.find((l) => l.tone === 'info')
@@ -50,7 +53,13 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
   const [wordTarget, setWordTarget] = useState<WordTarget | null>(null)
   /** Open the word sheet for the word actually spoken at this position. */
   const openWord = (tok: Token) =>
-    setWordTarget({ word: tok.spokenText, exerciseId: ex.id, tokenIndex: tok.index, context: sentenceAround(ex, tok.index) })
+    setWordTarget({
+      word: tok.spokenText,
+      compareWith: tok.isIncorrect ? tok.displayText : undefined,
+      exerciseId: ex.id,
+      tokenIndex: tok.index,
+      context: sentenceAround(ex, tok.index),
+    })
 
   const setConf = (index: number, c: Confidence) => {
     const next = { ...attempt.confidence }
@@ -101,6 +110,12 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
               <Stat label={t('results.toPractise')} value={s.score.misses + s.score.falsePositives} />
               <Stat label={t('results.net')} value={`${s.score.net}/${s.score.mismatches}`} />
             </div>
+            {(mind.saved.length > 0 || mind.lost.length > 0) && (
+              <div className="mt-3 space-y-0.5 text-sm text-ink-2">
+                {mind.saved.length > 0 && <p>↩ {t('results.mindSaved', { words: mind.saved.map(word).join(', ') })}</p>}
+                {mind.lost.length > 0 && <p>↩ {t('results.mindLost', { words: mind.lost.map(word).join(', ') })}</p>}
+              </div>
+            )}
             {mood === 'tough' && <p className="mt-3 text-xs text-ink-3">{t('results.toughNote')}</p>}
             {tip && tip.tone !== 'good' && (
               <div className="mt-4 rounded-lg bg-accent-soft px-3 py-2.5">
@@ -115,6 +130,7 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
 
       {!guided && rows.length > 0 && (
         <Card title={t('results.wordsToReplay')}>
+          <p className="-mt-1 mb-1 text-xs text-ink-3">{t('hear.hint')}</p>
           <ul className="divide-y divide-line">
             {rows.map((r) => (
               <li key={r.token.index} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
@@ -126,14 +142,19 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {r.token.trapCategory && <Badge>{tk(`trap.${r.token.trapCategory}`)}</Badge>}
+                    {mind.lost.includes(r.token.index) && <Badge tone="warn">↩ {t('results.unclicked')}</Badge>}
                   </div>
                 </div>
                 <Badge tone={r.selected ? 'good' : 'accent'}>{r.selected ? t('results.hit') : t('results.miss')}</Badge>
-                <div className="flex items-center gap-1">
-                  <Replay ex={ex} index={r.token.index} />
-                  <Button className="px-2.5 py-1 text-xs" onClick={() => openWord(r.token)} aria-label={t('vocab.lookUp')} title={t('vocab.lookUp')}>
-                    📖
-                  </Button>
+                <div className="w-full">
+                  <HearDifference
+                    shown={r.token.displayText}
+                    said={r.token.spokenText}
+                    ex={ex}
+                    index={r.token.index}
+                    context={sentenceAround(ex, r.token.index)}
+                    onLookUp={setWordTarget}
+                  />
                 </div>
               </li>
             ))}
@@ -410,7 +431,7 @@ export function Replay({ ex, index }: { ex: Exercise; index: number }) {
 
 function ReviewTranscript({ ex, decorate, onWord }: { ex: Exercise; decorate: (t: Token) => string | undefined; onWord: (t: Token) => void }) {
   return (
-    <p className="transcript-training text-[1.05rem]! leading-[2.2]!">
+    <p className="transcript-training leading-[2.2]!">
       {ex.tokens.map((tok) => (
         <span key={tok.index}>
           {tok.leading}

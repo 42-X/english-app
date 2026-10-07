@@ -1,5 +1,5 @@
 import { clickLatencyMs, latencyBucket, type LatencyBucket } from './latency'
-import { scoreSelection } from './scoring'
+import { finalSelection, scoreSelection } from './scoring'
 import { lagAt, stateOfLag, syncMetrics, type SyncState } from './sync'
 import type { Attempt, AttemptSummary, Exercise, Interaction, Token, TrackingSample, TrapCategory } from './types'
 
@@ -165,4 +165,26 @@ export function contextAround(tokens: readonly Token[], index: number, radius = 
     .slice(from, to)
     .map((t) => (t.index === index ? `[${t.leading}${w(t)}${t.trailing}]` : `${t.leading}${w(t)}${t.trailing}`))
     .join(' ')
+}
+
+/** Words she clicked and then unclicked (or re-clicked), and what each change of mind did to the score. */
+export interface MindChanges {
+  /** Unclicked a word that really was different: a point lost. */
+  lost: number[]
+  /** Unclicked a word that was correct as shown: a point saved. */
+  saved: number[]
+  /** Unclicked and clicked again. */
+  reclicked: number[]
+}
+
+export function mindChanges(ex: Exercise, interactions: readonly Interaction[]): MindChanges {
+  const final = new Set(finalSelection(interactions))
+  const toggled = [...new Set(interactions.filter((x) => x.action === 'deselect').map((x) => x.tokenIndex))].sort((a, b) => a - b)
+  const out: MindChanges = { lost: [], saved: [], reclicked: [] }
+  for (const i of toggled) {
+    if (final.has(i)) out.reclicked.push(i)
+    else if (ex.tokens[i]?.isIncorrect) out.lost.push(i)
+    else out.saved.push(i)
+  }
+  return out
 }

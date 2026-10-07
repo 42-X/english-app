@@ -691,3 +691,29 @@ describe('momentum', () => {
     expect(recs).toHaveLength(3)
   })
 })
+
+describe('changes of mind', () => {
+  it('tells apart unclicks that saved a point from ones that lost a point', async () => {
+    const { mindChanges } = await import('./analysis')
+    const ex = exercise(20, { 3: 'near-sound', 9: 'suffix' })
+    const at = (tokenIndex: number, action: 'select' | 'deselect', t: number) => ({ tokenIndex, action, t, spoken: 0 })
+    const m = mindChanges(ex, [at(3, 'select', 1), at(3, 'deselect', 2), at(5, 'select', 3), at(5, 'deselect', 4), at(9, 'select', 5), at(9, 'deselect', 6), at(9, 'select', 7)])
+    expect(m).toEqual({ lost: [3], saved: [5], reclicked: [9] })
+  })
+})
+
+describe('coach summary', () => {
+  it('summarises effort, skills and recent results, and renders a text report', async () => {
+    const { coachSummary, coachMarkdown } = await import('./coach')
+    const ex = exercise(40, { 5: 'word-family', 15: 'singular-plural', 30: 'near-sound' }, { id: 'ex1', title: 'Passage one' })
+    const now = new Date(2026, 9, 7, 12).getTime()
+    const attempts = [attempt({ ex, completedAt: now - 3600_000, startedAt: now - 3660_000, selected: [5, 15] }), attempt({ ex, completedAt: now - 86_400_000, startedAt: now - 86_460_000 })]
+    const s = coachSummary({ attempts, listening: [], mistakes: [], exById: new Map([[ex.id, ex]]), now })
+    expect(s.daysActive14).toBe(2)
+    expect(s.days).toHaveLength(2)
+    expect(s.recent[0]).toMatchObject({ task: 'HIW', title: 'Passage one', score: '2/3', extraClicks: 0 })
+    const md = coachMarkdown('Learner', s, now)
+    expect(md).toContain('# PTE listening practice — Learner')
+    expect(md).toContain('| HIW | practice | Passage one | 2/3 |')
+  })
+})

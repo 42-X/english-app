@@ -9,6 +9,8 @@ import { Badge, Button } from '../../ui/kit'
 
 export interface WordTarget {
   word: string
+  /** The other word in an HIW pair (what was shown vs said), to hear them side by side. */
+  compareWith?: string
   context?: string
   exerciseId?: string
   tokenIndex?: number
@@ -23,13 +25,44 @@ export function pronounce(word: string, audioUrl?: string): void {
   speak(word)
 }
 
-function speak(word: string): void {
-  if (!('speechSynthesis' in window)) return
+function speak(word: string, onEnd?: () => void): void {
+  if (!('speechSynthesis' in window)) return onEnd?.()
   const u = new SpeechSynthesisUtterance(word)
   u.lang = 'en-GB'
   u.rate = 0.85
+  if (onEnd) u.onend = u.onerror = () => onEnd()
   speechSynthesis.cancel()
   speechSynthesis.speak(u)
+}
+
+/** Say several words one after another with a short pause, e.g. the shown word then the spoken one. */
+export function pronounceInOrder(words: { word: string; audioUrl?: string }[], gapMs = 450): void {
+  const [first, ...rest] = words
+  if (!first) return
+  const next = () => setTimeout(() => pronounceInOrder(rest, gapMs), rest.length ? gapMs : 0)
+  if (first.audioUrl) {
+    const a = new Audio(first.audioUrl)
+    a.onended = next
+    void a.play().catch(() => speak(first.word, next))
+    return
+  }
+  speak(first.word, next)
+}
+
+/** Dictionary pronunciation URLs for some words, looked up ahead of time so playback starts on the tap. */
+export function usePronunciations(words: readonly string[]): Map<string, string | undefined> {
+  const key = words.map((w) => headword(w)).join('|')
+  const [urls, setUrls] = useState(new Map<string, string | undefined>())
+  useEffect(() => {
+    let live = true
+    void Promise.all(key.split('|').filter(Boolean).map(async (w) => [w, await lookupWord(w)] as const)).then((rs) => {
+      if (live) setUrls(new Map(rs.map(([w, r]) => [w, r && r !== 'offline' ? r.audioUrl : undefined])))
+    })
+    return () => {
+      live = false
+    }
+  }, [key])
+  return urls
 }
 
 export function chineseDictionaryUrl(word: string): string {
@@ -43,6 +76,7 @@ export function WordSheet({ target, onClose }: { target: WordTarget; onClose: ()
   const [dict, setDict] = useState<DictionaryResult | null | 'offline' | undefined>(undefined)
   const saved = useLiveQuery(() => db.vocab.get(id), [id])
   const inList = !!saved && !saved.deleted
+  const other = usePronunciations(target.compareWith ? [target.compareWith] : [])
 
   useEffect(() => {
     let live = true
@@ -87,6 +121,11 @@ export function WordSheet({ target, onClose }: { target: WordTarget; onClose: ()
           <Button className="px-3 py-1.5" onClick={() => pronounce(id, info?.audioUrl)}>
             🔊 {t('vocab.pronounce')}
           </Button>
+          {target.compareWith && (
+            <Button className="px-3 py-1.5" onClick={() => pronounceInOrder([{ word: id, audioUrl: info?.audioUrl }, { word: target.compareWith!, audioUrl: other.get(headword(target.compareWith!)) }])}>
+              🔊 {t('hear.compare', { w: target.compareWith })}
+            </Button>
+          )}
           <a className="inline-flex items-center rounded-lg border border-line px-3 py-1.5 text-sm text-ink-2 hover:bg-surface-2" href={chineseDictionaryUrl(id)} target="_blank" rel="noreferrer">
             中文 ↗
           </a>

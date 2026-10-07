@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS: Settings = {
   fading: { full: 0.3, line: 0.3 },
   liveCoaching: true,
   countdownSec: 7,
+  textSize: 'large',
   updatedAt: 0,
 }
 
