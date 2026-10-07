@@ -4,11 +4,13 @@ import { Link, useParams } from 'react-router-dom'
 import { useAppState } from '../../app/state'
 import { playRange, playSnippet, stopSnippet } from '../../audio/engine'
 import { db } from '../../data/db'
+import { recentListening } from '../../data/repo'
+import { listeningMood } from '../../domain/momentum'
 import { extractWfd, listeningCoaching, type AnswerKind } from '../../domain/listening'
 import type { Exercise, ListeningAttempt } from '../../domain/types'
 import { useCoachText, useI18n } from '../../i18n'
-import { Badge, Button, ButtonLink, Card, CoachLine, Stat } from '../../ui/kit'
-import { playLink } from '../home/HomePage'
+import { Badge, Button, Card, Stat } from '../../ui/kit'
+import { NextActions } from '../results/ResultsPage'
 import { WordSheet, type WordTarget } from '../vocab/WordSheet'
 
 const KIND_STYLE: Record<AnswerKind, string> = {
@@ -33,10 +35,10 @@ function Results({ a }: { a: ListeningAttempt }) {
   const coach = useCoachText()
   const { exerciseById, exercises } = useAppState()
   const [word, setWord] = useState<WordTarget | null>(null)
-  const plan = useLiveQuery(() => (a.planId ? db.plans.get(a.planId) : undefined), [a.planId])
-  const nextItem = plan?.items.find((i) => !i.attemptId)
-  const lines = listeningCoaching(a)
-  const pct = Math.round((a.correct / Math.max(1, a.total)) * 100)
+  const history = useLiveQuery(() => recentListening(a.task, 40), [a.task])
+  const mood = history && listeningMood(a, history)
+  // The score line is shown as the headline; the rest are tips.
+  const tips = listeningCoaching(a).filter((l) => l.key !== 'lst.score')
   useEffect(() => stopSnippet, [])
 
   return (
@@ -49,43 +51,33 @@ function Results({ a }: { a: ListeningAttempt }) {
       </header>
 
       <Card>
-        <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
-          <div>
-            <div className="text-xs text-ink-3">{t('lst.points')}</div>
-            <div className="text-4xl font-semibold text-ink tabular-nums">
-              {a.correct}
-              <span className="text-xl text-ink-3"> / {a.total}</span>
+        {mood && <div className="text-2xl font-semibold text-ink">{tk(`mood.${mood}`)}</div>}
+        <p className="mt-1 text-sm text-ink-2">
+          {t('lst.caught', { correct: a.correct, total: a.total })} {t('lst.noPenalty')}
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Stat label={t('lst.points')} value={`${a.correct}/${a.total}`} tone={a.correct > 0 ? 'good' : undefined} />
+          <Stat label={t('lst.accuracy')} value={`${Math.round((a.correct / Math.max(1, a.total)) * 100)}%`} />
+        </div>
+        {tips.length > 0 && (
+          <div className="mt-4 rounded-lg bg-accent-soft px-3 py-2.5">
+            <div className="text-xs font-semibold text-accent">💡 {t('results.tipTitle')}</div>
+            <div className="mt-1 space-y-1">
+              {tips.slice(0, 2).map((l, i) => (
+                <p key={i} className="text-sm leading-relaxed text-ink">
+                  {coach(l.key, l.params)}
+                </p>
+              ))}
             </div>
           </div>
-          <Stat label={t('lst.accuracy')} value={`${pct}%`} tone={pct >= 80 ? 'good' : pct < 60 ? 'bad' : 'warn'} />
-        </div>
-        <div className="mt-4 space-y-2">
-          {lines.map((l, i) => (
-            <CoachLine key={i} tone={l.tone}>
-              {coach(l.key, l.params)}
-            </CoachLine>
-          ))}
-        </div>
+        )}
+        <NextActions attempt={a} className="mt-4" celebrate />
         <p className="mt-3 text-xs text-ink-3">{t('lst.scoring')}</p>
       </Card>
 
       {a.task === 'fibl' ? <FiblReview a={a} onWord={setWord} /> : <WfdReview a={a} exercises={exercises} onWord={setWord} />}
 
-      <div className="flex flex-wrap gap-2 pb-4">
-        {nextItem && plan && (
-          <ButtonLink variant="primary" to={playLink(nextItem, plan)} replace>
-            {t('results.nextInPlan')} →
-          </ButtonLink>
-        )}
-        {plan && !nextItem && (
-          <ButtonLink variant="primary" to={`/report/${plan.id}`}>
-            {t('report.day.open')} →
-          </ButtonLink>
-        )}
-        {plan && <ButtonLink to="/">{t('results.backToPlan')}</ButtonLink>}
-        <ButtonLink to={a.task === 'fibl' ? '/practice?task=fibl' : '/practice?task=wfd'}>{t('results.morePractice')}</ButtonLink>
-        <ButtonLink to="/mistakes">{tk('mistakes.quickReview')}</ButtonLink>
-      </div>
+      <NextActions attempt={a} className="pb-4" retryTo={a.task === 'fibl' ? `/fibl/${a.exerciseId}?mode=${a.mode}` : `/wfd?mode=${a.mode}`} />
       {word && <WordSheet target={word} onClose={() => setWord(null)} />}
     </div>
   )

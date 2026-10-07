@@ -207,6 +207,8 @@ export interface PlanItem {
   sentences?: string[]
   reason: string
   attemptId?: string
+  /** Added after the daily quest, when she chose to keep going. */
+  bonus?: boolean
 }
 
 export interface DailyPlan {

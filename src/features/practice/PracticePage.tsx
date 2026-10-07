@@ -99,7 +99,7 @@ function HiwPractice() {
                 return (
                   <CatChip key={c} active={cat === c} onClick={() => setParams({ mode, cat: c })}>
                     {tk(`trap.${c}`)}
-                    {s && s.total > 0 && <span className={`ml-1 ${s.missRate >= 0.34 ? 'text-bad' : 'text-ink-3'}`}>{pct(s.missRate)}</span>}
+                    {s && s.total > 0 && <span className={`ml-1 ${s.missRate >= 0.34 ? 'text-warn' : 'text-ink-3'}`}>{pct(s.missRate)}</span>}
                   </CatChip>
                 )
               })}

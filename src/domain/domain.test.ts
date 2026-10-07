@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { speedAdvice, targetLevel, weaknesses } from './adaptive'
 import { falsePositiveRows, mismatchRows, summarize } from './analysis'
 import { clickLatencyMs, latencyBucket } from './latency'
-import { buildDailyPlan, buildOverclickTest, mismatchCount } from './plan'
+import { buildBonusRound, buildDailyPlan, buildOverclickTest, localDate, mismatchCount, trimLegacyQuest } from './plan'
+import { lastSevenDays, milestone, milestoneReachedToday, recommendations, resultMood, wins } from './momentum'
 import { overclickReport, pointLosses, rollingDiagnosis, sessionSummary } from './report'
 import { finalSelection, scoreSelection } from './scoring'
 import { isDue, recordMistake, reviewMistake, INTERVALS, MASTERED } from './srs'
@@ -326,7 +327,7 @@ describe('daily plan', () => {
       listening: { fiblLast: new Map(), fiblAccuracy: 0.5, wfd, wfdLast: new Map([['r1:0', 5]]) },
     })
     const fibl = plan.items.filter((i) => i.task === 'fibl')
-    expect(fibl).toHaveLength(2) // low accuracy → two passages
+    expect(fibl).toHaveLength(1) // the quest stays short; bonus rounds add more
     expect(new Set(plan.items.map((i) => i.exerciseId + i.task)).size).toBe(plan.items.length)
     const set = plan.items.find((i) => i.task === 'wfd')!
     expect(set.sentences).toHaveLength(6)
@@ -337,7 +338,45 @@ describe('daily plan', () => {
     const ex = lib[8]
     const as = Array.from({ length: 5 }, () => attempt({ ex, selected: [5, 15, 1, 2, 3, 4] }))
     const plan = buildDailyPlan({ date: 'd', exercises: lib, attempts: as, mistakes: [], speed: 1, now: 0 })
-    expect(plan.items.filter((i) => i.mode === 'overclick').length).toBe(2)
+    expect(plan.items.filter((i) => i.mode === 'overclick').length).toBe(1)
+    const more = buildBonusRound({ date: 'd', exercises: lib, attempts: as, mistakes: [], speed: 1, now: 0 }, plan)
+    expect(more.some((i) => i.mode === 'overclick')).toBe(true)
+  })
+
+  it('keeps the daily quest short and finishable', () => {
+    const plan = buildDailyPlan({ date: 'd', exercises: lib, attempts: [], mistakes: [], speed: 1, now: 0 })
+    expect(plan.items.length).toBeLessThanOrEqual(6)
+    expect(plan.items.every((i) => !i.bonus)).toBe(true)
+  })
+
+  it('leaves exam conditions out of the quest while she is struggling', () => {
+    const ex = lib[8]
+    // Pointer far behind the audio → weak sync → easier level.
+    const as = Array.from({ length: 5 }, () => attempt({ ex, samples: samples(40, () => -6) }))
+    const plan = buildDailyPlan({ date: 'd', exercises: lib, attempts: as, mistakes: [], speed: 1, now: 0 })
+    expect(plan.items.some((i) => i.mode === 'exam')).toBe(false)
+  })
+
+  it('trims a long pre-quest plan to six quest items, keeping finished work', () => {
+    const items = Array.from({ length: 10 }, (_, k) => ({ exerciseId: `e${k}`, mode: 'practice' as const, speed: 1, block: 'realistic' as const, reason: 'realistic', attemptId: k < 3 ? `a${k}` : undefined }))
+    const plan = { id: 'p', date: 'd', focus: [], items, createdAt: 0, updatedAt: 0 }
+    const t = trimLegacyQuest(plan)!
+    expect(t.items.filter((i) => !i.bonus)).toHaveLength(6)
+    expect(t.items.filter((i) => i.attemptId)).toHaveLength(3)
+    expect(trimLegacyQuest(t)).toBeNull()
+  })
+
+  it('bonus rounds never repeat a passage already in today’s plan', () => {
+    const input = { date: 'd', exercises: lib, attempts: [], mistakes: [], speed: 1, now: 0 }
+    let plan = buildDailyPlan(input)
+    for (let k = 0; k < 2; k++) {
+      const round = buildBonusRound(input, plan)
+      expect(round.length).toBeGreaterThan(0)
+      expect(round.every((i) => i.bonus)).toBe(true)
+      plan = { ...plan, items: [...plan.items, ...round] }
+    }
+    const ids = plan.items.map((i) => i.exerciseId)
+    expect(new Set(ids).size).toBe(ids.length)
   })
 
   it('reviews due mistakes using a different exercise with the same trap', () => {
@@ -600,5 +639,55 @@ describe('listening: spelling bank filter', () => {
     expect(worthReviewing('which', 'wrong')).toBe(false)
     expect(worthReviewing('emissions', 'blank')).toBe(true)
     expect(worthReviewing('emissions', 'correct')).toBe(false)
+  })
+})
+
+describe('momentum', () => {
+  const at = (y: number, m: number, d: number, h = 12) => new Date(y, m - 1, d, h).getTime()
+
+  it('sets the next points milestone and spots one passed today', () => {
+    expect(milestone(0)).toEqual({ prev: 0, next: 25 })
+    expect(milestone(264)).toEqual({ prev: 250, next: 500 })
+    expect(milestone(2600)).toEqual({ prev: 2500, next: 5000 })
+    expect(milestone(5200)).toEqual({ prev: 5000, next: 7500 })
+    expect(milestoneReachedToday(240, 264)).toBe(250)
+    expect(milestoneReachedToday(251, 264)).toBeNull()
+  })
+
+  it('lists the last seven days ending today', () => {
+    const week = lastSevenDays(new Set([localDate(at(2026, 10, 6))]), at(2026, 10, 6))
+    expect(week).toHaveLength(7)
+    expect(week[6]).toMatchObject({ today: true, active: true })
+    expect(week[0].date).toBe(localDate(at(2026, 9, 30)))
+  })
+
+  it('adds up effort and earned points', () => {
+    const perfect = attempt({ startedAt: 0, completedAt: 60_000 })
+    const w = wins([perfect], [{ id: 'l', task: 'wfd', exerciseId: 'e', mode: 'practice', items: [], correct: 7, total: 10, startedAt: 0, completedAt: 120_000, updatedAt: 0 }])
+    expect(w).toMatchObject({ done: 2, minutes: 3, caught: 3, written: 7, perfect: 1 })
+  })
+
+  it('frames results against her own average', () => {
+    expect(resultMood(1, true, [])).toBe('perfect')
+    expect(resultMood(0.5, false, [0.3, 0.3, 0.3])).toBe('better')
+    expect(resultMood(0.7, false, [])).toBe('good')
+    expect(resultMood(0.3, false, [0.35, 0.3, 0.4])).toBe('steady')
+    expect(resultMood(0.1, false, [0.6, 0.7, 0.6])).toBe('tough')
+  })
+
+  it('recommends quick review first, then her weakest area', () => {
+    const lib = [
+      exercise(30, { 3: 'number' }, { id: 'a', kind: 'realistic' }),
+      exercise(30, { 3: 'near-sound' }, { id: 'b', kind: 'realistic' }),
+      exercise(30, {}, { id: 'o', kind: 'overclick' }),
+    ]
+    const due = Array.from({ length: 3 }, (_, k) =>
+      recordMistake(undefined, { type: 'miss', display: `x${k}`, spoken: `y${k}`, exerciseId: 'a', tokenIndex: 3, context: '' }, 0),
+    )
+    const overclicky = Array.from({ length: 5 }, () => attempt({ ex: lib[0], selected: [3, 1, 2, 4, 5] }))
+    const recs = recommendations({ exercises: lib, attempts: overclicky, listening: [], mistakes: due, learningWords: 0, now: INTERVALS[0] + 1 })
+    expect(recs[0]).toMatchObject({ kind: 'review', due: 3 })
+    expect(recs[1]).toMatchObject({ kind: 'overclicking', exerciseId: 'o' })
+    expect(recs).toHaveLength(3)
   })
 })

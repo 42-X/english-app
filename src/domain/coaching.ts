@@ -77,7 +77,7 @@ export function focusCoaching(f: Focus): Coaching {
     case 'trap':
       return { key: 'focus.trap', params: { cat: f.category }, tone: 'info' }
     default:
-      return { key: `focus.${f.type}`, tone: f.type === 'baseline' ? 'info' : 'warn' }
+      return { key: `focus.${f.type}`, tone: 'info' }
   }
 }
 

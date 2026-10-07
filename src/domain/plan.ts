@@ -46,11 +46,12 @@ function lruOrder(exercises: readonly Exercise[], attempts: readonly Attempt[]):
   )
 }
 
-export function buildDailyPlan(input: PlanInput): DailyPlan {
-  const { exercises, attempts, speed, now } = input
+/** Shared exercise picking for the daily quest and bonus rounds. */
+function planner(input: PlanInput, exclude: ReadonlySet<string>, bonus: boolean) {
+  const { exercises, attempts, speed } = input
   const focus = weaknesses(attempts)
   const level = targetLevel(attempts)
-  const used = new Set<string>()
+  const used = new Set(exclude)
   const items: PlanItem[] = []
   const library = exercises.filter((e) => !e.custom && !e.archived)
   const ordered = lruOrder(library, attempts)
@@ -63,71 +64,136 @@ export function buildDailyPlan(input: PlanInput): DailyPlan {
     return ex
   }
   const add = (ex: Exercise | undefined, mode: Mode, block: PlanItem['block'], reason: string, s = speed) => {
-    if (ex) items.push({ exerciseId: ex.id, mode, speed: s, block, reason })
+    if (ex) items.push({ exerciseId: ex.id, mode, speed: s, block, reason, ...(bonus ? { bonus: true } : {}) })
   }
   const has = (t: Focus['type']) => focus.some((f) => f.type === t)
-  const trapFoci = focus.filter((f): f is Extract<Focus, { type: 'trap' }> => f.type === 'trap')
-  const passage = (e: Exercise) => e.kind === 'realistic' || e.kind === 'easy' || e.kind === 'recovery' || e.kind === 'guided'
-  const sparse = (e: Exercise) => e.kind === 'overclick'
-  const long = (e: Exercise) => passage(e) && e.tokens.length >= 95
+  /** Struggling right now: keep exam conditions out until things feel steadier. */
+  const struggling = level === 1 || has('tracking')
 
-  // 1. Warm-up synchronization (~5 min), always at 1.0×. Easier passages when tracking is the problem.
-  if (has('tracking') || has('baseline')) {
-    add(pick((e) => passage(e) && (e.difficulty ?? 2) <= 2), 'guided', 'warmup', 'warmup', 1)
-    add(pick(passage), 'fading', 'warmup', 'fading', 1)
-  } else {
-    add(pick(passage), 'fading', 'warmup', 'fading', 1)
+  /** One weak-spot item for focus `f` (rotates through her weaknesses across bonus rounds). */
+  const drill = (f: Focus | undefined) => {
+    if (!f || f.type === 'baseline') return add(pick(passage), 'practice', 'drill', f ? 'baseline' : 'variety')
+    if (f.type === 'overclicking') return add(pick(sparse), 'overclick', 'drill', 'overclick')
+    if (f.type === 'trap') return add(pick((e) => hasTrap(e, f.category)), 'drill', 'drill', `trap:${f.category}`)
+    if (f.type === 'tracking') return add(pick(long) ?? pick(passage), 'recovery', 'drill', 'recovery', 1)
+    if (f.type === 'latency') return add(pick(passage), 'practice', 'drill', 'latency')
+    return add(pick(passage), 'drill', 'drill', 'discrimination')
   }
 
-  // 2. Weak-spot drills (~5 min): full-length passages containing the weak trap type.
-  if (has('overclicking')) {
-    add(pick(sparse), 'overclick', 'drill', 'overclick')
-    add(pick(sparse), 'overclick', 'drill', 'overclick')
-  }
-  for (const f of trapFoci.slice(0, has('overclicking') ? 1 : 2)) {
-    add(pick((e) => hasTrap(e, f.category)), 'drill', 'drill', `trap:${f.category}`)
-  }
-  if (has('tracking')) add(pick(long) ?? pick(passage), 'recovery', 'drill', 'recovery', 1)
-  if (has('latency') || has('baseline')) add(pick(passage), 'practice', 'drill', has('baseline') ? 'baseline' : 'latency')
-  if (has('discrimination') && trapFoci.length === 0) add(pick(passage), 'drill', 'drill', 'discrimination')
-  if (!items.some((i) => i.block === 'drill')) add(pick(passage), 'drill', 'drill', 'variety')
-
-  // 3. Realistic HIW (~7–10 min) at her level; the last one under exam conditions.
-  add(pick((e) => e.kind === 'realistic'), 'practice', 'realistic', 'realistic')
-  add(pick((e) => e.kind === 'realistic' || sparse(e)), 'practice', 'realistic', 'realistic')
-  add(pick((e) => e.kind === 'realistic'), 'exam', 'realistic', 'exam')
-
-  // 4. Listening tasks: FIB-L (passage with blanks) and a WFD set (dictation). These carry most of
-  //    the Listening score alongside HIW. Extra FIB-L when its accuracy is low.
-  const L = input.listening
-  if (L) {
+  /** FIB-L passages and one WFD set, avoiding sentences already in `skipSentences`. */
+  const listening = (nFibl: number, skipSentences: ReadonlySet<string> = new Set()) => {
+    const L = input.listening
+    if (!L) return
     const fibl = library
       .filter((e) => isHuman(e) && !used.has(e.id) && e.kind !== 'overclick')
       .sort((a, b) => (L.fiblLast.get(a.id) ?? 0) - (L.fiblLast.get(b.id) ?? 0) || a.id.localeCompare(b.id))
-    const nFibl = L.fiblAccuracy !== null && L.fiblAccuracy < 0.7 ? 2 : 1
     for (const ex of fibl.slice(0, nFibl)) {
       used.add(ex.id)
-      items.push({ exerciseId: ex.id, mode: 'practice', speed: 1, block: 'fibl', task: 'fibl', reason: 'fibl' })
+      items.push({ exerciseId: ex.id, mode: 'practice', speed: 1, block: 'fibl', task: 'fibl', reason: 'fibl', ...(bonus ? { bonus: true } : {}) })
     }
-    const seed = [...input.date].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
-    const wfd = [...L.wfd]
-      .sort((a, b) => (L.wfdLast.get(a.id) ?? 0) - (L.wfdLast.get(b.id) ?? 0) || (((seed ^ a.from) % 97) - ((seed ^ b.from) % 97)))
+    const seed = [...input.date].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7 + skipSentences.size)
+    const wfd = L.wfd
+      .filter((x) => !skipSentences.has(x.id))
+      .sort((a, b) => (L.wfdLast.get(a.id) ?? 0) - (L.wfdLast.get(b.id) ?? 0) || ((seed ^ a.from) % 97) - ((seed ^ b.from) % 97))
       .slice(0, WFD_SET)
-    if (wfd.length) items.push({ exerciseId: wfd[0].exerciseId, mode: 'practice', speed: 1, block: 'wfd', task: 'wfd', reason: 'wfd', sentences: wfd.map((x) => x.id) })
+    if (wfd.length) {
+      items.push({ exerciseId: wfd[0].exerciseId, mode: 'practice', speed: 1, block: 'wfd', task: 'wfd', reason: 'wfd', sentences: wfd.map((x) => x.id), ...(bonus ? { bonus: true } : {}) })
+    }
   }
 
-  // 5. Mistake-bank review (~3–5 min) with *different* passages containing the same confusions.
-  const due = input.mistakes.filter((m) => isDue(m, now))
-  const dueCats = [...new Set(due.map((m) => m.trapCategory).filter((c): c is TrapCategory => !!c))]
-  for (const cat of dueCats.slice(0, 2)) {
-    const origin = new Set(due.filter((m) => m.trapCategory === cat).map((m) => m.exerciseId))
-    add(pick((e) => hasTrap(e, cat) && !origin.has(e.id)) ?? pick((e) => hasTrap(e, cat)), 'review', 'review', `review:${cat}`)
-  }
-  if (due.some((m) => m.type === 'false-positive') && dueCats.length < 2) {
-    add(pick(sparse), 'review', 'review', 'review:false-positive')
+  /** Mistake-bank review with a *different* passage containing the same confusion. */
+  const review = (max: number) => {
+    const due = input.mistakes.filter((m) => isDue(m, input.now))
+    const dueCats = [...new Set(due.map((m) => m.trapCategory).filter((c): c is TrapCategory => !!c))]
+    for (const cat of dueCats.slice(0, max)) {
+      const origin = new Set(due.filter((m) => m.trapCategory === cat).map((m) => m.exerciseId))
+      add(pick((e) => hasTrap(e, cat) && !origin.has(e.id)) ?? pick((e) => hasTrap(e, cat)), 'review', 'review', `review:${cat}`)
+    }
+    if (dueCats.length < max && due.some((m) => m.type === 'false-positive')) add(pick(sparse), 'review', 'review', 'review:false-positive')
   }
 
-  return { id: `plan-${input.date}`, kind: 'daily', date: input.date, focus, items, createdAt: now, updatedAt: now }
+  return { focus, level, struggling, items, has, pick, add, drill, listening, review }
+}
+
+export const passage = (e: Exercise) => e.kind === 'realistic' || e.kind === 'easy' || e.kind === 'recovery' || e.kind === 'guided'
+export const sparse = (e: Exercise) => e.kind === 'overclick'
+const long = (e: Exercise) => passage(e) && e.tokens.length >= 95
+
+/** One exercise for a standalone recommendation: least recently used, closest to her level. */
+export function suggestExercise(exercises: readonly Exercise[], attempts: readonly Attempt[], pred: (e: Exercise) => boolean): Exercise | undefined {
+  const level = targetLevel(attempts)
+  const pool = lruOrder(
+    exercises.filter((e) => !e.custom && !e.archived && pred(e)),
+    attempts,
+  )
+  // Stable sort keeps least-recently-used first among equally suitable levels.
+  return [...pool].sort((a, b) => Math.abs((a.difficulty ?? 2) - level) - Math.abs((b.difficulty ?? 2) - level))[0]
+}
+
+/** Block order on the page and in play order. */
+const BLOCK_ORDER: PlanItem['block'][] = ['warmup', 'drill', 'realistic', 'fibl', 'wfd', 'review']
+const byBlock = (items: PlanItem[]) => [...items].sort((a, b) => BLOCK_ORDER.indexOf(a.block) - BLOCK_ORDER.indexOf(b.block))
+
+/**
+ * The daily quest: a short (~15 min), finishable session — warm-up → one weak-spot drill → a realistic
+ * passage → FIB-L → a WFD set → review or exam conditions. Finishing it should feel achievable every day;
+ * more practice comes from bonus rounds (`buildBonusRound`), not from a longer quest.
+ */
+export function buildDailyPlan(input: PlanInput): DailyPlan {
+  const p = planner(input, new Set(), false)
+  const { focus } = p
+
+  // Warm-up synchronization at 1.0×. Easier passages when tracking is the problem.
+  if (p.has('tracking') || p.has('baseline')) p.add(p.pick((e) => passage(e) && (e.difficulty ?? 2) <= 2), 'guided', 'warmup', 'warmup', 1)
+  else p.add(p.pick(passage), 'fading', 'warmup', 'fading', 1)
+
+  p.drill(focus[0])
+  p.add(p.pick((e) => e.kind === 'realistic'), 'practice', 'realistic', 'realistic')
+  p.listening(1)
+
+  // Last slot: due review first; otherwise exam conditions — but only when she isn't struggling.
+  const before = p.items.length
+  p.review(1)
+  if (p.items.length === before) {
+    if (p.struggling) p.add(p.pick((e) => e.kind === 'realistic') ?? p.pick(passage), 'practice', 'realistic', 'realistic')
+    else p.add(p.pick((e) => e.kind === 'realistic'), 'exam', 'realistic', 'exam')
+  }
+
+  return { id: `plan-${input.date}`, kind: 'daily', date: input.date, focus, items: byBlock(p.items), createdAt: input.now, updatedAt: input.now }
+}
+
+/** Most items a daily quest holds. */
+export const QUEST_MAX = 6
+
+/**
+ * Plans made before the daily quest existed held 8–12 items. Keep the first six as the quest and
+ * mark the rest as bonus, so the day stays finishable; finished items stay finished. Null when no change is needed.
+ */
+export function trimLegacyQuest(plan: DailyPlan): DailyPlan | null {
+  if (plan.kind === 'overclick-test' || plan.items.filter((i) => !i.bonus).length <= QUEST_MAX) return null
+  let kept = 0
+  const items = plan.items.map((i) => (i.bonus || kept++ < QUEST_MAX ? i : { ...i, bonus: true }))
+  return { ...plan, items }
+}
+
+/**
+ * "Keep going": a further ~10-minute round after (or alongside) the quest. Never repeats a passage
+ * or WFD sentence already in today's plan, and rotates through her weaknesses round by round.
+ */
+export function buildBonusRound(input: PlanInput, plan: DailyPlan): PlanItem[] {
+  const p = planner(input, new Set(plan.items.map((i) => i.exerciseId)), true)
+  // Every round starts with one drill, so earlier bonus drills count the rounds so far.
+  const round = plan.items.filter((i) => i.bonus && i.block === 'drill').length
+  const real = p.focus.filter((f) => f.type !== 'baseline')
+
+  p.drill(real.length ? real[round % real.length] : p.focus[0])
+  const exam = !p.struggling && round % 2 === 1
+  p.add(p.pick((e) => e.kind === 'realistic') ?? p.pick(passage), exam ? 'exam' : 'practice', 'realistic', exam ? 'exam' : 'realistic')
+  p.listening(1, new Set(plan.items.flatMap((i) => i.sentences ?? [])))
+  p.review(1)
+  // A tiny library could run dry; fall back to anything not done today.
+  if (p.items.length === 0) p.add(p.pick(() => true, false), 'practice', 'realistic', 'realistic')
+  return byBlock(p.items)
 }
 
 /**

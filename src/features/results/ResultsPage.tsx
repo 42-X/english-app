@@ -4,15 +4,18 @@ import { useParams } from 'react-router-dom'
 import { useAppState } from '../../app/state'
 import { playSnippet, stopSnippet } from '../../audio/engine'
 import { db } from '../../data/db'
-import { updateConfidence } from '../../data/repo'
+import { recentAttempts, updateConfidence } from '../../data/repo'
 import { requestSync } from '../../data/sync'
 import { falsePositiveRows, mismatchRows, type Cause } from '../../domain/analysis'
 import { attemptCoaching } from '../../domain/coaching'
+import { hiwMood } from '../../domain/momentum'
 import { blackoutRecoveries } from '../../domain/sync'
 import type { Attempt, Confidence, Exercise, Token } from '../../domain/types'
 import { useCoachText, useI18n } from '../../i18n'
 import { pct, secs, signed, speedLabel } from '../../ui/format'
-import { Badge, Button, ButtonLink, Card, CoachLine, Stat } from '../../ui/kit'
+import { Badge, Button, ButtonLink, Card, CoachLine, Disclosure, Stat } from '../../ui/kit'
+import { playLink } from '../home/HomePage'
+import { useKeepGoing } from '../home/keepGoing'
 import { Timeline } from './Timeline'
 import { WordSheet, type WordTarget } from '../vocab/WordSheet'
 import { contextAround } from '../../domain/analysis'
@@ -36,17 +39,18 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
   const rows = useMemo(() => mismatchRows(ex, attempt), [ex, attempt])
   const fps = useMemo(() => falsePositiveRows(ex, attempt), [ex, attempt])
   const lines = attemptCoaching(s, rows, fps, attempt.confidence, guided)
+  // One thing to work on: the most important non-praise line.
+  const tip = lines.find((l) => l.tone === 'warn') ?? lines.find((l) => l.tone === 'info')
   const recoveries = blackoutRecoveries(attempt.samples, attempt.blackouts, attempt.speed)
   const approx = attempt.timing !== 'exact'
+  const history = useLiveQuery(() => recentAttempts(40), [])
+  const mood = history && hiwMood(attempt, history)
 
   useEffect(() => stopSnippet, [])
   const [wordTarget, setWordTarget] = useState<WordTarget | null>(null)
   /** Open the word sheet for the word actually spoken at this position. */
   const openWord = (tok: Token) =>
     setWordTarget({ word: tok.spokenText, exerciseId: ex.id, tokenIndex: tok.index, context: sentenceAround(ex, tok.index) })
-
-  const plan = useLiveQuery(() => (attempt.planId ? db.plans.get(attempt.planId) : undefined), [attempt.planId])
-  const nextItem = plan?.items.find((i) => !i.attemptId)
 
   const setConf = (index: number, c: Confidence) => {
     const next = { ...attempt.confidence }
@@ -74,87 +78,43 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
         {approx && <Badge tone="warn">{t('common.approx')}</Badge>}
       </header>
 
-      {!guided && (
-        <Card>
-          <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
-            <div>
-              <div className="text-xs text-ink-3">{t('results.net')}</div>
-              <div className="text-4xl font-semibold tabular-nums text-ink">
-                {s.score.net}
-                <span className="text-xl text-ink-3"> / {s.score.mismatches}</span>
-              </div>
-            </div>
-            <div className="grid flex-1 grid-cols-3 gap-2 sm:grid-cols-6">
-              <Stat label={t('results.hits')} value={s.score.hits} tone={s.score.hits === s.score.mismatches ? 'good' : undefined} />
-              <Stat label={t('results.fps')} value={s.score.falsePositives} tone={s.score.falsePositives ? 'bad' : 'good'} />
-              <Stat label={t('results.misses')} value={s.score.misses} tone={s.score.misses ? 'warn' : undefined} />
-              <Stat label={t('results.precision')} value={pct(s.score.precision)} />
-              <Stat label={t('results.recall')} value={pct(s.score.recall)} />
-              <Stat label={t('results.latency')} value={secs(s.avgLatencyMs)} />
-            </div>
-          </div>
-          <p className="mt-3 text-xs text-ink-3">{t('results.simulation')}</p>
-        </Card>
-      )}
-
       <Card>
-        <div className="space-y-2">
-          {guided && <CoachLine tone="info">{t('results.guidedOnly')}</CoachLine>}
-          {lines.map((l, i) => (
-            <CoachLine key={i} tone={l.tone}>
-              {coach(l.key, l.params)}
-            </CoachLine>
-          ))}
-        </div>
-      </Card>
-
-      <Card title={t('results.syncTitle')} action={approx ? <span className="text-xs text-warn">{t('common.approxNote')}</span> : undefined}>
-        {s.sync ? (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Stat label={t('results.within1')} value={pct(s.sync.within1)} />
-            <Stat label={t('results.within2')} value={pct(s.sync.within2)} tone={s.sync.within2 >= 0.9 ? 'good' : s.sync.within2 < 0.75 ? 'bad' : 'warn'} />
-            <Stat label={t('results.avgLag')} value={t('results.lagWords', { n: signed(s.sync.avgLag) })} sub={`median ${signed(s.sync.medianLag)}`} />
-            <Stat label={t('results.maxBehind')} value={t('results.lagWords', { n: s.sync.maxBehind })} />
-            <Stat label={t('results.lossEvents')} value={s.sync.lossEvents} tone={s.sync.lossEvents ? 'warn' : 'good'} />
-            <Stat label={t('results.avgRecovery')} value={secs(s.sync.avgRecoveryMs)} />
-            <Stat label={t('results.longestRecovery')} value={secs(s.sync.longestRecoveryMs)} />
-            <Stat label={t('results.coverage')} value={pct(s.sync.coverage)} />
+        {guided ? (
+          <div className="space-y-2">
+            <CoachLine tone="info">{t('results.guidedOnly')}</CoachLine>
+            {lines.map((l, i) => (
+              <CoachLine key={i} tone={l.tone}>
+                {coach(l.key, l.params)}
+              </CoachLine>
+            ))}
           </div>
         ) : (
-          <p className="text-sm text-ink-2">{t('coach.noTracking')}</p>
+          <>
+            {mood && <div className="text-2xl font-semibold text-ink">{tk(`mood.${mood}`)}</div>}
+            <p className="mt-1 text-sm text-ink-2">
+              {s.score.mismatches ? t('results.caught', { hits: s.score.hits, mm: s.score.mismatches }) : t('results.caughtClean')}{' '}
+              {s.score.falsePositives ? t('results.extraClicks', { n: s.score.falsePositives }) : t('results.noExtra')}
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <Stat label={t('results.caughtStat')} value={`${s.score.hits}/${s.score.mismatches}`} tone={s.score.hits > 0 ? 'good' : undefined} />
+              <Stat label={t('results.extraStat')} value={s.score.falsePositives} tone={s.score.falsePositives ? 'warn' : 'good'} />
+              <Stat label={t('results.toPractise')} value={s.score.misses + s.score.falsePositives} />
+              <Stat label={t('results.net')} value={`${s.score.net}/${s.score.mismatches}`} />
+            </div>
+            {mood === 'tough' && <p className="mt-3 text-xs text-ink-3">{t('results.toughNote')}</p>}
+            {tip && tip.tone !== 'good' && (
+              <div className="mt-4 rounded-lg bg-accent-soft px-3 py-2.5">
+                <div className="text-xs font-semibold text-accent">💡 {t('results.tipTitle')}</div>
+                <p className="mt-0.5 text-sm leading-relaxed text-ink">{coach(tip.key, tip.params)}</p>
+              </div>
+            )}
+          </>
         )}
-        {attempt.checks && attempt.checks.length > 0 && (
-          <p className="mt-3 text-sm text-ink-2">
-            {t('results.checks', {
-              ok: attempt.checks.filter((c) => c.answer !== null && Math.abs(c.answer - c.spoken) <= 1).length,
-              total: attempt.checks.length,
-              off: (() => {
-                const answered = attempt.checks.filter((c) => c.answer !== null)
-                return answered.length ? (answered.reduce((n, c) => n + Math.abs((c.answer as number) - c.spoken), 0) / answered.length).toFixed(1) : '—'
-              })(),
-            })}
-          </p>
-        )}
-        {attempt.blackouts.length > 0 && (
-          <p className="mt-3 text-sm text-ink-2">
-            {t('results.blackouts', { list: recoveries.map((r) => (r === null ? t('results.notRecovered') : secs(r))).join(' · ') })}
-          </p>
-        )}
-      </Card>
-
-      <Card title={t('results.timeline')}>
-        <Timeline
-          samples={attempt.samples}
-          durationMs={ex.durationMs}
-          rows={guided ? [] : rows}
-          fps={guided ? [] : fps}
-          interactions={attempt.interactions}
-          blackouts={attempt.blackouts}
-        />
+        <NextActions attempt={attempt} className="mt-4" celebrate />
       </Card>
 
       {!guided && rows.length > 0 && (
-        <Card title={t('results.mismatches')}>
+        <Card title={t('results.wordsToReplay')}>
           <ul className="divide-y divide-line">
             {rows.map((r) => (
               <li key={r.token.index} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
@@ -166,18 +126,9 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {r.token.trapCategory && <Badge>{tk(`trap.${r.token.trapCategory}`)}</Badge>}
-                    <CauseBadges causes={r.causes} />
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3 text-sm">
-                  <Badge tone={r.selected ? 'good' : 'bad'}>{r.selected ? t('results.hit') : t('results.miss')}</Badge>
-                  <span className="text-ink-2 tabular-nums" title={t('results.col.latency')}>
-                    {r.latencyMs !== null && r.bucket ? `${secs(r.latencyMs)} · ${tk(`latency.${r.bucket}`)}` : '—'}
-                  </span>
-                  <span className="text-ink-2" title={t('results.col.lag')}>
-                    <LagText lag={r.lag} />
-                  </span>
-                </div>
+                <Badge tone={r.selected ? 'good' : 'accent'}>{r.selected ? t('results.hit') : t('results.miss')}</Badge>
                 <div className="flex items-center gap-1">
                   <Replay ex={ex} index={r.token.index} />
                   <Button className="px-2.5 py-1 text-xs" onClick={() => openWord(r.token)} aria-label={t('vocab.lookUp')} title={t('vocab.lookUp')}>
@@ -187,57 +138,7 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
               </li>
             ))}
           </ul>
-        </Card>
-      )}
-
-      {!guided && (
-        <Card title={t('results.fpTitle')}>
-          {fps.length === 0 ? (
-            <p className="text-sm text-good">{t('results.fpNone')}</p>
-          ) : (
-            <ul className="divide-y divide-line">
-              {fps.map((f) => (
-                <li key={f.token.index} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
-                  <div className="min-w-40 flex-1">
-                    <div className="text-base font-medium text-ink">{f.token.displayText}</div>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      <CauseBadges causes={f.causes} />
-                    </div>
-                  </div>
-                  <span className="text-sm text-ink-2">
-                    <LagText lag={f.lag} />
-                  </span>
-                  <Replay ex={ex} index={f.token.index} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      )}
-
-      {!guided && attempt.selected.length > 0 && (
-        <Card title={t('results.confidenceTitle')}>
-          <p className="mb-3 text-sm text-ink-2">{t('results.confidenceHint')}</p>
-          <ul className="space-y-2">
-            {attempt.selected.map((i) => (
-              <li key={i} className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-medium text-ink">{ex.tokens[i]?.displayText}</span>
-                <div className="inline-flex gap-1">
-                  {(['high', 'medium', 'guess'] as const).map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => setConf(i, c)}
-                      className={`rounded-md border px-2.5 py-1 text-xs ${
-                        attempt.confidence[i] === c ? 'border-accent bg-accent-soft text-accent' : 'border-line text-ink-2 hover:bg-surface-2'
-                      }`}
-                    >
-                      {t(`results.conf.${c}`)}
-                    </button>
-                  ))}
-                </div>
-              </li>
-            ))}
-          </ul>
+          {(s.score.misses > 0 || fps.length > 0) && <p className="mt-2 text-xs text-ink-3">{t('results.savedNote')}</p>}
         </Card>
       )}
 
@@ -245,6 +146,152 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
         <p className="mb-2 text-xs text-ink-3">{t('vocab.tapHint')}</p>
         <ReviewTranscript ex={ex} decorate={guided ? () => undefined : decorate} onWord={openWord} />
       </Card>
+
+      <Disclosure title={t('results.details')}>
+        {!guided && (
+          <div className="space-y-2">
+            {lines.map((l, i) => (
+              <CoachLine key={i} tone={l.tone}>
+                {coach(l.key, l.params)}
+              </CoachLine>
+            ))}
+          </div>
+        )}
+
+        {!guided && (
+          <div className="grid grid-cols-3 gap-2">
+            <Stat label={t('results.precision')} value={pct(s.score.precision)} />
+            <Stat label={t('results.recall')} value={pct(s.score.recall)} />
+            <Stat label={t('results.latency')} value={secs(s.avgLatencyMs)} />
+          </div>
+        )}
+
+        <section>
+          <h3 className="mb-2 text-sm font-semibold text-ink">
+            {t('results.syncTitle')}
+            {approx && <span className="ml-2 text-xs font-normal text-warn">{t('common.approxNote')}</span>}
+          </h3>
+          {s.sync ? (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <Stat label={t('results.within1')} value={pct(s.sync.within1)} />
+              <Stat label={t('results.within2')} value={pct(s.sync.within2)} tone={s.sync.within2 >= 0.9 ? 'good' : s.sync.within2 < 0.75 ? 'warn' : undefined} />
+              <Stat label={t('results.avgLag')} value={t('results.lagWords', { n: signed(s.sync.avgLag) })} sub={`median ${signed(s.sync.medianLag)}`} />
+              <Stat label={t('results.maxBehind')} value={t('results.lagWords', { n: s.sync.maxBehind })} />
+              <Stat label={t('results.lossEvents')} value={s.sync.lossEvents} tone={s.sync.lossEvents ? 'warn' : 'good'} />
+              <Stat label={t('results.avgRecovery')} value={secs(s.sync.avgRecoveryMs)} />
+              <Stat label={t('results.longestRecovery')} value={secs(s.sync.longestRecoveryMs)} />
+              <Stat label={t('results.coverage')} value={pct(s.sync.coverage)} />
+            </div>
+          ) : (
+            <p className="text-sm text-ink-2">{t('coach.noTracking')}</p>
+          )}
+          {attempt.checks && attempt.checks.length > 0 && (
+            <p className="mt-3 text-sm text-ink-2">
+              {t('results.checks', {
+                ok: attempt.checks.filter((c) => c.answer !== null && Math.abs(c.answer - c.spoken) <= 1).length,
+                total: attempt.checks.length,
+                off: (() => {
+                  const answered = attempt.checks.filter((c) => c.answer !== null)
+                  return answered.length ? (answered.reduce((n, c) => n + Math.abs((c.answer as number) - c.spoken), 0) / answered.length).toFixed(1) : '—'
+                })(),
+              })}
+            </p>
+          )}
+          {attempt.blackouts.length > 0 && (
+            <p className="mt-3 text-sm text-ink-2">
+              {t('results.blackouts', { list: recoveries.map((r) => (r === null ? t('results.notRecovered') : secs(r))).join(' · ') })}
+            </p>
+          )}
+        </section>
+
+        <section>
+          <h3 className="mb-2 text-sm font-semibold text-ink">{t('results.timeline')}</h3>
+          <Timeline
+            samples={attempt.samples}
+            durationMs={ex.durationMs}
+            rows={guided ? [] : rows}
+            fps={guided ? [] : fps}
+            interactions={attempt.interactions}
+            blackouts={attempt.blackouts}
+          />
+        </section>
+
+        {!guided && rows.length > 0 && (
+          <section>
+            <h3 className="mb-2 text-sm font-semibold text-ink">{t('results.mismatches')}</h3>
+            <ul className="divide-y divide-line">
+              {rows.map((r) => (
+                <li key={r.token.index} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2 text-sm">
+                  <span className="min-w-32 font-medium text-ink">{r.token.spokenText}</span>
+                  <span className="flex flex-wrap gap-1">
+                    <CauseBadges causes={r.causes} />
+                  </span>
+                  <span className="text-ink-2 tabular-nums" title={t('results.col.latency')}>
+                    {r.latencyMs !== null && r.bucket ? `${secs(r.latencyMs)} · ${tk(`latency.${r.bucket}`)}` : '—'}
+                  </span>
+                  <span className="text-ink-2" title={t('results.col.lag')}>
+                    <LagText lag={r.lag} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {!guided && (
+          <section>
+            <h3 className="mb-2 text-sm font-semibold text-ink">{t('results.fpTitle')}</h3>
+            {fps.length === 0 ? (
+              <p className="text-sm text-good">{t('results.fpNone')}</p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {fps.map((f) => (
+                  <li key={f.token.index} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
+                    <div className="min-w-40 flex-1">
+                      <div className="text-base font-medium text-ink">{f.token.displayText}</div>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        <CauseBadges causes={f.causes} />
+                      </div>
+                    </div>
+                    <span className="text-sm text-ink-2">
+                      <LagText lag={f.lag} />
+                    </span>
+                    <Replay ex={ex} index={f.token.index} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
+        {!guided && attempt.selected.length > 0 && (
+          <section>
+            <h3 className="mb-1 text-sm font-semibold text-ink">{t('results.confidenceTitle')}</h3>
+            <p className="mb-3 text-sm text-ink-2">{t('results.confidenceHint')}</p>
+            <ul className="space-y-2">
+              {attempt.selected.map((i) => (
+                <li key={i} className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium text-ink">{ex.tokens[i]?.displayText}</span>
+                  <div className="inline-flex gap-1">
+                    {(['high', 'medium', 'guess'] as const).map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setConf(i, c)}
+                        className={`rounded-md border px-2.5 py-1 text-xs ${
+                          attempt.confidence[i] === c ? 'border-accent bg-accent-soft text-accent' : 'border-line text-ink-2 hover:bg-surface-2'
+                        }`}
+                      >
+                        {t(`results.conf.${c}`)}
+                      </button>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {!guided && <p className="text-xs text-ink-3">{t('results.simulation')}</p>}
+      </Disclosure>
 
       {ex.credit && (
         <p className="text-xs text-ink-3">
@@ -260,28 +307,57 @@ function Results({ attempt, ex }: { attempt: Attempt; ex: Exercise }) {
         </p>
       )}
 
-      <div className="flex flex-wrap gap-2 pb-4">
-        {nextItem ? (
-          <ButtonLink variant="primary" to={`/play/${nextItem.exerciseId}?mode=${nextItem.mode}&speed=${nextItem.speed}&plan=${plan!.id}`} replace>
+      <NextActions attempt={attempt} className="pb-4" retryTo={`/play/${ex.id}?mode=${attempt.mode}&speed=${attempt.speed}`} />
+      {wordTarget && <WordSheet target={wordTarget} onClose={() => setWordTarget(null)} />}
+    </div>
+  )
+}
+
+/**
+ * Where to go from a result: the next plan item, or — when the plan is used up — straight into a
+ * fresh bonus round, so practice never dead-ends on a score.
+ */
+export function NextActions({
+  attempt,
+  className = '',
+  celebrate = false,
+  retryTo,
+}: {
+  attempt: { planId?: string; id: string }
+  className?: string
+  /** Show the "quest complete" banner (once per page). */
+  celebrate?: boolean
+  retryTo?: string
+}) {
+  const { t } = useI18n()
+  const keepGoing = useKeepGoing()
+  const plan = useLiveQuery(() => (attempt.planId ? db.plans.get(attempt.planId) : undefined), [attempt.planId])
+  const nextItem = plan?.items.find((i) => !i.attemptId)
+  const quest = plan?.kind === 'overclick-test' ? [] : (plan?.items.filter((i) => !i.bonus) ?? [])
+  const questDone = quest.length > 0 && quest.every((i) => i.attemptId) && quest.some((i) => i.attemptId === attempt.id)
+  return (
+    <div className={className}>
+      {celebrate && questDone && !plan?.items.some((i) => i.bonus && i.attemptId) && (
+        <p className="mb-3 rounded-lg bg-good-soft px-3 py-2.5 text-sm font-medium text-good">{t('home.allDone')}</p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        {nextItem && plan ? (
+          <ButtonLink variant="primary" to={playLink(nextItem, plan)} replace>
             {t('results.nextInPlan')} →
           </ButtonLink>
-        ) : null}
-        {plan && !nextItem && (
-          <ButtonLink variant="primary" to={`/report/${plan.id}`}>
-            {t('report.day.open')} →
+        ) : (
+          <Button variant="primary" onClick={() => void keepGoing(true)}>
+            {t('home.keepGoing')} →
+          </Button>
+        )}
+        {questDone && plan && <ButtonLink to={`/report/${plan.id}`}>{t('report.day.open')}</ButtonLink>}
+        {retryTo && (
+          <ButtonLink to={retryTo} replace>
+            {t('results.retry')}
           </ButtonLink>
         )}
-        {plan && <ButtonLink to="/">{t('results.backToPlan')}</ButtonLink>}
-        <ButtonLink to={`/play/${ex.id}?mode=${attempt.mode}&speed=${attempt.speed}`} replace>
-          {t('results.retry')}
-        </ButtonLink>
-        {!plan && (
-          <ButtonLink variant="primary" to="/practice">
-            {t('results.morePractice')}
-          </ButtonLink>
-        )}
+        <ButtonLink to="/">{t('results.backToPlan')}</ButtonLink>
       </div>
-      {wordTarget && <WordSheet target={wordTarget} onClose={() => setWordTarget(null)} />}
     </div>
   )
 }

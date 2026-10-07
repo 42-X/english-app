@@ -6,6 +6,8 @@ const DAY = 24 * 60 * MIN
 /** Review intervals after each successful step: 10 min, 1 day, 3 days, 7 days. */
 export const INTERVALS = [10 * MIN, DAY, 3 * DAY, 7 * DAY] as const
 export const MASTERED = INTERVALS.length
+/** Cards per Quick review session. */
+export const REVIEW_SESSION = 12
 
 export function mistakeId(type: MistakeItem['type'], display: string, spoken: string): string {
   return `${type}:${display.toLowerCase()}>${spoken.toLowerCase()}`

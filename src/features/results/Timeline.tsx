@@ -194,7 +194,7 @@ export function Timeline({ samples, durationMs, rows, fps, interactions, blackou
             </div>
             {hover.ev && 'token' in hover.ev && (
               <div className="mt-0.5">
-                {hover.ev.token.displayText} → {hover.ev.token.spokenText} · {hover.ev.selected ? t('results.hit') : t('results.miss')}
+                {hover.ev.token.displayText} → {hover.ev.token.spokenText} · {hover.ev.selected ? t('results.hit') : t('mistakes.type.miss')}
               </div>
             )}
             {hover.ev && 'f' in hover.ev && (
@@ -220,7 +220,7 @@ export function Timeline({ samples, durationMs, rows, fps, interactions, blackou
           <span className="text-good">●</span> {t('results.hit').replace('✓ ', '')}
         </span>
         <span>
-          <span className="text-bad">✕</span> {t('results.miss').replace('✗ ', '')}
+          <span className="text-bad">✕</span> {t('mistakes.type.miss')}
         </span>
         <span>
           <span className="text-warn">▲</span> {t('results.fps')}

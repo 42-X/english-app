@@ -2,14 +2,16 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useParams } from 'react-router-dom'
 import { useAppState } from '../../app/state'
 import { db } from '../../data/db'
-import { recentAttempts, sessionAttempts } from '../../data/repo'
+import { recentAttempts, recentListening, sessionAttempts } from '../../data/repo'
 import { focusCoaching } from '../../domain/coaching'
 import { overclickReport, sessionSummary, type Delta, type PointLoss } from '../../domain/report'
 import type { Attempt, DailyPlan, ListeningAttempt } from '../../domain/types'
 import { listeningStats } from '../../domain/listening'
+import { wins } from '../../domain/momentum'
 import { useCoachText, useI18n } from '../../i18n'
 import { pct } from '../../ui/format'
-import { ButtonLink, Card, CoachLine, PageHeader, Stat } from '../../ui/kit'
+import { Button, ButtonLink, Card, CoachLine, PageHeader, Stat } from '../../ui/kit'
+import { useKeepGoing } from '../home/keepGoing'
 
 const DAY = 86_400_000
 
@@ -19,11 +21,12 @@ export function ReportPage() {
   const data = useLiveQuery(async () => {
     const plan = await db.plans.get(id)
     if (!plan) return null
-    const attempts = await sessionAttempts(plan)
     const recent = await recentAttempts(200)
-    const listening = (await db.listening.bulkGet(plan.items.filter((i) => i.task === 'fibl' || i.task === 'wfd').map((i) => i.attemptId ?? '')))
-      .filter((a): a is NonNullable<typeof a> => !!a && !a.deleted)
-    return { plan, attempts, recent, listening }
+    if (plan.kind === 'overclick-test') return { plan, attempts: await sessionAttempts(plan), recent, listening: [] }
+    // A day's wins include everything practised that day, not only plan items.
+    const start = new Date(`${plan.date}T00:00:00`).getTime()
+    const inDay = (x: { completedAt: number }) => x.completedAt >= start && x.completedAt < start + DAY
+    return { plan, attempts: recent.filter(inDay), recent, listening: (await recentListening(undefined, 500)).filter(inDay) }
   }, [id])
   if (data === undefined) return <p className="p-6 text-ink-2">{t('common.loading')}</p>
   if (data === null) return <p className="p-6 text-ink-2">{t('player.notFound')}</p>
@@ -88,44 +91,47 @@ function OverclickTestReport({ plan, attempts }: Props) {
 }
 
 function DailySummary({ plan, attempts, recent, listening }: Props) {
-  const { t, tk } = useI18n()
+  const { t } = useI18n()
   const coach = useCoachText()
   const { exerciseById } = useAppState()
   const start = new Date(`${plan.date}T00:00:00`).getTime()
   const previous = recent.filter((a) => a.completedAt < start && a.completedAt >= start - 7 * DAY)
   const s = sessionSummary(attempts, previous, recent, exerciseById)
+  const w = wins(attempts, listening)
   return (
     <div className="space-y-4">
-      <PageHeader title={t('report.day.title')} sub={t('report.day.sub', { n: s.attempts, net: s.net, max: s.maxNet })} />
+      <PageHeader title={`🎉 ${t('report.day.title')}`} sub={t('report.day.sub', { n: w.done })} />
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <Stat label={t('report.day.minutes')} value={t('home.minutes', { n: w.minutes })} />
+        <Stat label={t('report.day.caught')} value={w.caught} tone={w.caught ? 'good' : undefined} />
+        {w.written > 0 && <Stat label={t('report.day.written')} value={w.written} tone="good" />}
+        {w.perfect > 0 && <Stat label={t('report.day.perfect')} value={w.perfect} tone="good" />}
+      </div>
 
       <Card title={t('report.day.improved')}>
-        {s.improved.length === 0 && s.worse.length === 0 ? (
+        {s.improved.length === 0 ? (
           <p className="text-sm text-ink-2">{previous.length ? t('report.day.steady') : t('report.day.firstDay')}</p>
         ) : (
           <ul className="space-y-1.5 text-sm">
             {s.improved.map((d) => (
-              <DeltaLine key={d.metric} d={d} good />
-            ))}
-            {s.worse.map((d) => (
               <DeltaLine key={d.metric} d={d} />
             ))}
           </ul>
         )}
       </Card>
 
-      <Card title={t('report.day.lost')}>
-        {s.losses.length === 0 ? (
-          <p className="text-sm text-good">{t('report.day.noLoss')}</p>
-        ) : (
+      {listening.length > 0 && <ListeningSummary listening={listening} />}
+
+      {s.losses.length > 0 && (
+        <Card title={t('report.day.lost')}>
           <ul className="space-y-1.5 text-sm">
             {s.losses.map((l) => (
               <LossLine key={l.source} l={l} />
             ))}
           </ul>
-        )}
-      </Card>
-
-      {listening.length > 0 && <ListeningSummary listening={listening} />}
+        </Card>
+      )}
 
       <Card title={t('report.day.tomorrow')}>
         <div className="space-y-2">
@@ -140,26 +146,31 @@ function DailySummary({ plan, attempts, recent, listening }: Props) {
         </div>
       </Card>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label={t('results.precision')} value={pct(s.stats.precision)} />
-        <Stat label={t('results.recall')} value={pct(s.stats.recall)} />
-        <Stat label={t('progress.sync')} value={pct(s.stats.within2)} />
-        <Stat label={t('results.fps')} value={s.stats.falsePositives} />
+      <p className="text-xs text-ink-3">{t('report.day.note')}</p>
+      <div className="flex flex-wrap gap-2">
+        <KeepGoingButton />
+        <ButtonLink to="/">{t('results.backToPlan')}</ButtonLink>
       </div>
-      <p className="text-xs text-ink-3">{tk('report.day.note')}</p>
-      <ButtonLink variant="primary" to="/">
-        {t('results.backToPlan')}
-      </ButtonLink>
     </div>
   )
 }
 
-function DeltaLine({ d, good }: { d: Delta; good?: boolean }) {
+function KeepGoingButton() {
+  const { t } = useI18n()
+  const keepGoing = useKeepGoing()
+  return (
+    <Button variant="primary" onClick={() => void keepGoing()}>
+      {t('home.keepGoing')} →
+    </Button>
+  )
+}
+
+function DeltaLine({ d }: { d: Delta }) {
   const { tk } = useI18n()
   const fmt = (v: number) => (d.metric === 'fpPerPassage' ? v.toFixed(1) : pct(v))
   return (
     <li className="flex items-center gap-2">
-      <span className={good ? 'text-good' : 'text-bad'}>{good ? '▲' : '▼'}</span>
+      <span className="text-good">▲</span>
       <span className="text-ink">{tk(`report.metric.${d.metric}`)}</span>
       <span className="text-ink-2 tabular-nums">
         {fmt(d.before)} → {fmt(d.now)}
@@ -175,7 +186,7 @@ function LossLine({ l }: { l: PointLoss }) {
   return (
     <li className="flex items-center justify-between gap-3">
       <span className="text-ink">{label}</span>
-      <span className="font-medium text-bad tabular-nums">−{l.points}</span>
+      <span className="font-medium text-accent tabular-nums">{tk('report.day.pointsAvail', { n: l.points })}</span>
     </li>
   )
 }
@@ -190,7 +201,7 @@ function ListeningSummary({ listening }: { listening: ListeningAttempt[] }) {
         {s.fibl.attempts > 0 && <Stat label="Fill in the Blanks" value={`${s.fibl.correct}/${s.fibl.total}`} sub={pct(s.fibl.accuracy)} />}
         {s.wfd.attempts > 0 && <Stat label="Write From Dictation" value={`${s.wfd.correct}/${s.wfd.total}`} sub={pct(s.wfd.accuracy)} />}
       </div>
-      {worst[0] && <CoachLine tone="warn">{tk(`lst.${worst[0]}${worst[0] === 'blank' ? '.fibl' : ''}`, { n: s.kinds[worst[0]] })}</CoachLine>}
+      {worst[0] && <CoachLine tone="info">{tk(`lst.${worst[0]}${worst[0] === 'blank' ? '.fibl' : ''}`, { n: s.kinds[worst[0]] })}</CoachLine>}
     </Card>
   )
 }

@@ -278,7 +278,7 @@ export function listeningCoaching(a: ListeningAttempt): Coaching[] {
   ]
   const losses: [AnswerKind, number][] = (['ending', 'spelling', 'wrong', 'blank'] as const).map((k) => [k, c[k]] as [AnswerKind, number]).filter(([, n]) => n > 0)
   losses.sort((x, y) => y[1] - x[1])
-  for (const [k, n] of losses) out.push({ key: `lst.${k}${k === 'blank' ? `.${a.task}` : ''}`, params: { n }, tone: 'warn' })
+  for (const [k, n] of losses) out.push({ key: `lst.${k}${k === 'blank' ? `.${a.task}` : ''}`, params: { n }, tone: 'info' })
   if (a.task === 'wfd' && a.mode === 'practice') {
     const replays = a.items.reduce((n, it) => n + (it.replays ?? 0), 0)
     if (replays > 0) out.push({ key: 'lst.replays', params: { n: replays }, tone: 'info' })

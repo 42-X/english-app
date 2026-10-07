@@ -3,15 +3,14 @@ import { useAppState } from '../../app/state'
 import { playSnippet, stopSnippet } from '../../audio/engine'
 import { liveMistakes, reviewMistakeNow } from '../../data/repo'
 import { requestSync } from '../../data/sync'
-import { isDue, MASTERED } from '../../domain/srs'
+import { isDue, MASTERED, REVIEW_SESSION } from '../../domain/srs'
 import type { MistakeItem } from '../../domain/types'
 import { useI18n } from '../../i18n'
 import { Badge, Button, ButtonLink, Card, PageHeader } from '../../ui/kit'
 import { sameWord } from '../../domain/listening'
 import { RAW_INPUT } from '../listening/FiblPlayer'
 import { WordSheet, type WordTarget } from '../vocab/WordSheet'
-
-const SESSION_SIZE = 12
+import { useKeepGoing } from '../home/keepGoing'
 
 /** Due items first, then the least-practised; mastered items last. */
 function order(items: MistakeItem[], now: number): MistakeItem[] {
@@ -31,8 +30,17 @@ export function QuickReview() {
   const [results, setResults] = useState<boolean[]>([])
   const [word, setWord] = useState<WordTarget | null>(null)
 
+  const keepGoing = useKeepGoing()
+  const deal = () =>
+    void liveMistakes().then((m) => {
+      setDeck(order(m, Date.now()).slice(0, REVIEW_SESSION))
+      setI(0)
+      setResults([])
+      setRevealed(false)
+    })
+
   useEffect(() => {
-    void liveMistakes().then((m) => setDeck(order(m, Date.now()).slice(0, SESSION_SIZE)))
+    deal()
     return stopSnippet
   }, [])
 
@@ -76,15 +84,14 @@ export function QuickReview() {
       <div className="space-y-4">
         <PageHeader title={t('mistakes.quickReview')} />
         <Card>
-          <div className="text-3xl font-semibold text-ink">
-            {ok}/{results.length}
-          </div>
+          <div className="text-2xl font-semibold text-ink">{ok >= results.length * 0.8 ? t('quick.doneGreat') : t('quick.doneOk')}</div>
           <p className="mt-1 text-sm text-ink-2">{t('quick.done', { ok, total: results.length })}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <ButtonLink variant="primary" to="/mistakes">
-              {t('quick.backToBank')}
-            </ButtonLink>
-            <ButtonLink to="/mistakes?tab=words">{t('review.tab.words')}</ButtonLink>
+            <Button variant="primary" onClick={() => void keepGoing()}>
+              {t('home.keepGoing')} →
+            </Button>
+            <Button onClick={deal}>{t('quick.more')}</Button>
+            <ButtonLink to="/">{t('results.backToPlan')}</ButtonLink>
           </div>
         </Card>
       </div>
@@ -104,7 +111,7 @@ export function QuickReview() {
       <PageHeader title={t('mistakes.quickReview')} sub={t('quick.progress', { n: i + 1, total: deck.length })} />
       <Card>
         <div className="flex flex-wrap items-center gap-1.5">
-          <Badge tone={fp ? 'warn' : 'bad'}>{fp ? t('mistakes.type.false-positive') : t('mistakes.type.miss')}</Badge>
+          <Badge tone={fp ? 'warn' : 'accent'}>{fp ? t('mistakes.type.false-positive') : t('mistakes.type.miss')}</Badge>
           {card.trapCategory && <Badge>{tk(`trap.${card.trapCategory}`)}</Badge>}
         </div>
         <p className="mt-4 text-lg leading-relaxed text-ink">

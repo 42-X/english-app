@@ -101,3 +101,18 @@ export function PageHeader({ title, sub, action }: { title: ReactNode; sub?: Rea
     </header>
   )
 }
+
+/** A card whose body is hidden until opened — for detail that shouldn't compete with the next step. */
+export function Disclosure({ title, children, defaultOpen = false, className = '' }: { title: ReactNode; children: ReactNode; defaultOpen?: boolean; className?: string }) {
+  return (
+    <details className={`group rounded-xl border border-line bg-surface ${className}`} open={defaultOpen}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-base font-semibold text-ink sm:px-5 [&::-webkit-details-marker]:hidden">
+        {title}
+        <span aria-hidden className="text-lg leading-none text-ink-3 transition-transform group-open:rotate-90">
+          ›
+        </span>
+      </summary>
+      <div className="space-y-4 px-4 pb-4 sm:px-5 sm:pb-5">{children}</div>
+    </details>
+  )
+}

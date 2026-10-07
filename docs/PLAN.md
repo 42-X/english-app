@@ -230,3 +230,18 @@ start in every mode; Next directly under the passage; volume control; phone auto
 - Two-device sync: account created on phone context, history appeared on a second context after sign-in; RLS blocks reading/writing other users' rows
 - After 4 over-clicky, lagging attempts the plan refocused on sync + over-clicking (2 over-click tests, recovery drill)
 - Not yet tested on a real iPhone/Android — do this before relying on it (audio unlock, touch feel)
+
+### Learner feedback round 3 (2026-10-06): motivation
+She finished a day feeling discouraged by how many answers were wrong. The app now judges results against her
+own recent average and always offers a next step.
+- [x] "Today" → **Home dashboard**: minutes today, last-7-days dots, lifetime points earned with milestones (only grows).
+  No streak on purpose — nothing she can lose
+- [x] Plans made before the quest (8–12 items) are trimmed to a 6-item quest; the rest become bonus, finished work kept
+- [x] Quick review ends with encouragement and Keep going / Another round instead of a dead end
+- [x] **Daily quest** (~15 min, ≤6 items) replaces the 25–35 min plan; no exam-conditions item while she is struggling
+- [x] **Keep going**: unlimited ~10 min bonus rounds that rotate through her weaknesses and never repeat a passage that day
+- [x] **Recommended next**: 3 one-tap steps (quick review capped at one 12-card session, weakest trap/skill, FIB-L/WFD)
+- [x] Results lead with a mood headline vs her average, what she caught, one tip and Next/Keep going; diagnostics collapsed
+- [x] Day report → "Today's wins" (whole day, improvements only, "+N pts" opportunities instead of red losses)
+- [x] Focus/coaching copy reworded as next skills; mistake bank shown as next session size + words mastered
+

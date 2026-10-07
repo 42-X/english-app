@@ -1,9 +1,9 @@
 import { isHiwAttempt } from '../domain/adaptive'
 import { contextAround, falsePositiveRows } from '../domain/analysis'
 import { extractWfd, MAX_NEW_SPELLING_PER_SET, worthReviewing } from '../domain/listening'
-import { buildDailyPlan, buildOverclickTest, hasTrap, localDate, type PlanInput } from '../domain/plan'
+import { buildBonusRound, buildDailyPlan, buildOverclickTest, hasTrap, localDate, trimLegacyQuest, type PlanInput } from '../domain/plan'
 import { isDue, recordMistake, reviewMistake } from '../domain/srs'
-import type { Attempt, DailyPlan, Exercise, ListeningAttempt, MistakeItem, Settings, VocabEntry } from '../domain/types'
+import type { Attempt, DailyPlan, Exercise, ListeningAttempt, MistakeItem, PlanItem, Settings, VocabEntry } from '../domain/types'
 import { headword, parseDictionary, parseWiktionary, type DictionaryResult } from '../domain/vocab'
 import { db, getMeta, setMeta, type AttemptRow } from './db'
 
@@ -92,7 +92,12 @@ export async function saveAttempt(attempt: Attempt, ex: Exercise): Promise<void>
     if (attempt.planId) {
       const plan = await db.plans.get(attempt.planId)
       if (plan) {
-        const items = plan.items.map((i) => (i.exerciseId === ex.id && !i.attemptId ? { ...i, attemptId: attempt.id } : i))
+        let done = false
+        const items = plan.items.map((i) => {
+          if (done || i.attemptId || i.exerciseId !== ex.id || (i.task ?? 'hiw') !== 'hiw') return i
+          done = true
+          return { ...i, attemptId: attempt.id }
+        })
         await db.plans.put({ ...plan, items, updatedAt: now, dirty: 1 })
       }
     }
@@ -238,14 +243,37 @@ export async function addListeningToPlan(planId: string, exercises: readonly Exe
   await db.plans.put({ ...plan, items, updatedAt: Date.now(), dirty: 1 })
 }
 
-/** After finishing today's plan: append a few more exercises chosen for current weaknesses. */
-export async function extendPlan(planId: string, exercises: readonly Exercise[], speed: number, count = 3): Promise<void> {
+/** Shorten a plan made before the daily quest existed (see `trimLegacyQuest`). */
+export async function trimPlan(planId: string): Promise<void> {
   const plan = await db.plans.get(planId)
-  if (!plan) return
-  const fresh = buildDailyPlan({ date: plan.date, exercises, attempts: await recentAttempts(60), mistakes: await liveMistakes(), speed, now: Date.now(), listening: await listeningInput(exercises) })
-  const have = new Set(plan.items.map((i) => i.exerciseId))
-  const extra = fresh.items.filter((i) => (i.block === 'drill' || i.block === 'realistic') && !have.has(i.exerciseId)).slice(0, count)
-  await db.plans.put({ ...plan, items: [...plan.items, ...extra], updatedAt: Date.now(), dirty: 1 })
+  const trimmed = plan && trimLegacyQuest(plan)
+  if (trimmed) await db.plans.put({ ...trimmed, updatedAt: Date.now(), dirty: 1 })
+}
+
+/** Append a bonus round (~10 min, chosen for current weaknesses) to a plan; returns the new items. */
+export async function extendPlan(planId: string, exercises: readonly Exercise[], speed: number): Promise<PlanItem[]> {
+  const plan = await db.plans.get(planId)
+  if (!plan) return []
+  const round = buildBonusRound(
+    { date: plan.date, exercises, attempts: await recentAttempts(60), mistakes: await liveMistakes(), speed, now: Date.now(), listening: await listeningInput(exercises) },
+    plan,
+  )
+  await db.plans.put({ ...plan, items: [...plan.items, ...round], updatedAt: Date.now(), dirty: 1 })
+  return round
+}
+
+/**
+ * "Keep going" from anywhere: the next unfinished item of today's plan, adding a bonus round when
+ * everything is done. Practice never runs out.
+ */
+export async function keepGoing(exercises: readonly Exercise[], speed: number): Promise<{ plan: DailyPlan; item: PlanItem } | null> {
+  let plan = await todaysPlan(exercises, speed)
+  let item = plan.items.find((i) => !i.attemptId)
+  if (!item) {
+    item = (await extendPlan(plan.id, exercises, speed))[0]
+    plan = (await db.plans.get(plan.id)) ?? plan
+  }
+  return item ? { plan, item } : null
 }
 
 // ── My words ────────────────────────────────────────────────────────

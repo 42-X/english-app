@@ -88,7 +88,7 @@ export function ProgressPage() {
         <Stat label={t('progress.avgNet')} value={g.n ? g.avgNet.toFixed(1) : '—'} />
         <Stat label={t('progress.precision')} value={pct(g.precision)} tone={tone(g.precision, THRESHOLDS.precision)} sub={t('progress.target', { v: pct(THRESHOLDS.precision) })} />
         <Stat label={t('progress.recall')} value={pct(g.recall)} tone={tone(g.recall, THRESHOLDS.recall)} sub={t('progress.target', { v: pct(THRESHOLDS.recall) })} />
-        <Stat label={t('progress.fpRate')} value={fpPerEx === null ? '—' : fpPerEx.toFixed(1)} tone={fpPerEx === null ? undefined : fpPerEx <= 0.3 ? 'good' : fpPerEx > 1 ? 'bad' : 'warn'} />
+        <Stat label={t('progress.fpRate')} value={fpPerEx === null ? '—' : fpPerEx.toFixed(1)} tone={fpPerEx === null ? undefined : fpPerEx <= 0.3 ? 'good' : 'warn'} />
         <Stat label={t('progress.sync')} value={pct(tracked.within2)} tone={tone(tracked.within2, THRESHOLDS.within2)} sub={t('progress.target', { v: pct(THRESHOLDS.within2) })} />
         <Stat label={t('progress.lag')} value={signed(tracked.avgLag)} />
         <Stat label={t('progress.recovery')} value={secs(tracked.avgRecoveryMs)} />
@@ -247,7 +247,7 @@ function ConfidenceCard({ attempts }: { attempts: Attempt[] }) {
               label={t(`results.conf.${c}`)}
               value={s ? pct(s.hits / s.total) : '—'}
               sub={s ? `n=${s.total} · ${t('progress.fpByConf', { n: s.total - s.hits })}` : undefined}
-              tone={s && s.total - s.hits > s.hits ? 'bad' : undefined}
+              tone={s && s.total - s.hits > s.hits ? 'warn' : undefined}
             />
           )
         })}
