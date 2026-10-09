@@ -74,7 +74,11 @@ function planner(input: PlanInput, exclude: ReadonlySet<string>, bonus: boolean)
   const drill = (f: Focus | undefined) => {
     if (!f || f.type === 'baseline') return add(pick(passage), 'practice', 'drill', f ? 'baseline' : 'variety')
     if (f.type === 'overclicking') return add(pick(sparse), 'overclick', 'drill', 'overclick')
-    if (f.type === 'trap') return add(pick((e) => hasTrap(e, f.category)), 'drill', 'drill', `trap:${f.category}`)
+    if (f.type === 'trap') {
+      // A weakness from older passages whose swap type the library no longer uses (e.g. plurals): any passage.
+      const ex = pick((e) => hasTrap(e, f.category))
+      return ex ? add(ex, 'drill', 'drill', `trap:${f.category}`) : add(pick(passage), 'practice', 'drill', 'variety')
+    }
     if (f.type === 'tracking') return add(pick(long) ?? pick(passage), 'recovery', 'drill', 'recovery', 1)
     if (f.type === 'latency') return add(pick(passage), 'practice', 'drill', 'latency')
     return add(pick(passage), 'drill', 'drill', 'discrimination')

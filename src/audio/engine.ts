@@ -361,6 +361,39 @@ export async function playSnippet(ex: Exercise, tokenIndex: number, rate: number
 }
 
 /**
+ * Play a short recording (a word's pronunciation) on the shared, already-unlocked element, so it can
+ * start without a tap on iOS. Resolves false when it can't play (missing file, blocked) — the caller
+ * then falls back to the device voice.
+ */
+export async function playClip(url: string, onEnd?: () => void): Promise<boolean> {
+  stopSnippet()
+  try {
+    const { src, revoke } = await resolveAudioUrl(url)
+    const el = sharedAudio()
+    el.src = src
+    el.playbackRate = 1
+    el.volume = 1
+    let done = false
+    const stop = () => {
+      if (done) return
+      done = true
+      el.onended = null
+      el.pause()
+      revoke?.()
+    }
+    current = { stop }
+    el.onended = () => {
+      stop()
+      onEnd?.()
+    }
+    await el.play()
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
  * Play one window of an exercise's recording (a WFD sentence) on the shared element.
  * Calls onProgress with 0–1 and onEnd when the window finishes. Returns a stop function.
  */

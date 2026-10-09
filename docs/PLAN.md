@@ -151,6 +151,31 @@ start in every mode; Next directly under the passage; volume control; phone auto
 - [x] Quick review flashcards with audio replay and self-grading
 - [x] My words: look up any word, definitions + pronunciation + Chinese dictionary link, learned count and milestones, synced
 
+### Learner feedback round 5 (2026-10-08): PTE vocabulary
+She found the passages full of words the PTE doesn't use (her saved words: dichromatism, ontogenetic, ventral…),
+and studying APEUni's word list all day monotonous.
+- [x] **PTE word list** (`scripts/words.py`, `build_words.py`): 3,932 study words in 79 packs of 50, most-tested first,
+  from open lists — ECDICT (MIT; IELTS/TOEFL/CET-6 tags, frequency, Chinese) + NAWL/NGSL (CC BY-SA) + words from
+  exam-style HIW pairs. Traditional Chinese via OpenCC (s2twp). Every library token tagged `pte` / `ok` / `rare`
+- [x] **HIW swaps re-authored to the exam's style**: all 475 swaps use PTE-level words on both sides (0 rare words, was
+  many). Mix now 44% same ending/new start (attention→retention, efficient→sufficient, the APEUni pattern), 30% other
+  look/sound-alikes (valid→vital), 20% near-synonyms, ~6% grammar/function/number (was ~37% plural/tense/number).
+  `scripts/suggest_swaps.py` proposes inflected look-alikes per word for future items. Audio unchanged
+- [x] Passages with >8% specialist terms (11) auto-marked difficulty 3, so they're served last
+- [x] FIB-L blanks only on PTE/everyday words (714/869 on study words, 0 rare); WFD only sentences without specialist
+  terms (69 of 129)
+- [x] Weak-spot drill falls back to a regular passage when no passage has her old weak swap type (plurals, tense)
+- [x] **PTE words game** (/words): 3-minute rounds — new-word card (Chinese, definition, the real sentence + clip from her
+  passages), meaning, hear-and-pick among same-ending look-alikes, reverse, fill the gap in the real sentence, spell it;
+  misses come back in the round; combo cheers; spaced levels (10 min → 1 d → 3 d → 7 d → 3 wk, learned at 4).
+  Quick sort (tick words you already know), Speed match (personal best only), pack collection grid. Rounds count
+  toward minutes, days and points; progress lives on synced vocab rows (no migration); Home card + recommendation
+- [x] 3,932 word pronunciations voiced offline with Kokoro (af_bella US, bf_emma UK; male voices garbled short words
+  in a Whisper spot check), cached separately from passage audio
+- [x] Dictionary links: Cambridge via its search URL (lands on the entry, plurals included, or suggestions — the
+  direct URL silently redirected to the home page for words it lacks) + Yahoo 奇摩字典 backup + offline Chinese
+  meaning in the word sheet for every study/passage word
+
 ### P1 — soon after
 - [x] FIB-L trainer (same audio + timestamps; strict spelling scoring with US/UK variants; error diagnosis; in the daily plan)
 - [x] WFD trainer (129 sentences from the passages; exam/practice modes; per-word feedback; in the daily plan)

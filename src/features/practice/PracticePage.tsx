@@ -176,7 +176,15 @@ export function PracticePage() {
   const task = (['fibl', 'wfd'].includes(params.get('task') ?? '') ? params.get('task') : 'hiw') as Task
   return (
     <div className="space-y-4">
-      <PageHeader title={t('practice.title')} action={<ButtonLink to="/create">＋ {t('nav.create')}</ButtonLink>} />
+      <PageHeader
+        title={t('practice.title')}
+        action={
+          <div className="flex gap-2">
+            <ButtonLink to="/words">📚 {t('words.title')}</ButtonLink>
+            <ButtonLink to="/create">＋ {t('nav.create')}</ButtonLink>
+          </div>
+        }
+      />
       <Segmented
         value={task}
         onChange={(v) => setParams(v === 'hiw' ? {} : { task: v }, { replace: true })}

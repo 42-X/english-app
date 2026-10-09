@@ -63,6 +63,8 @@ export interface Wins {
   caught: number
   /** FIB-L / WFD words written correctly. */
   written: number
+  /** Word-game questions answered right. */
+  words: number
   /** HIW passages with everything caught and no extra clicks (incl. correctly leaving a clean passage alone). */
   perfect: number
 }
@@ -75,9 +77,15 @@ export function wins(attempts: readonly Attempt[], listening: readonly Listening
     done: a.length + l.length,
     minutes: Math.round(sessions(a, l).reduce((n, s) => n + s.ms, 0) / 60_000),
     caught: hiw.reduce((n, x) => n + x.summary.score.hits, 0),
-    written: l.reduce((n, x) => n + x.correct, 0),
+    written: l.filter((x) => x.task !== 'words').reduce((n, x) => n + x.correct, 0),
+    words: l.filter((x) => x.task === 'words').reduce((n, x) => n + x.correct, 0),
     perfect: hiw.filter((x) => isPerfect(x)).length,
   }
+}
+
+/** Points: every HIW word caught, FIB-L/WFD word written and word-game answer right. */
+export function points(w: Wins): number {
+  return w.caught + w.written + w.words
 }
 
 function isPerfect(a: Attempt): boolean {
@@ -133,6 +141,7 @@ export type Rec =
   | { kind: 'overclicking' | 'tracking' | 'latency' | 'discrimination' | 'exam' | 'practice'; exerciseId: string }
   | { kind: 'fibl'; exerciseId: string }
   | { kind: 'wfd' }
+  /** A word-game round; `learning` = words due for review there. */
   | { kind: 'words'; learning: number }
 
 export interface RecInput {
@@ -142,7 +151,8 @@ export interface RecInput {
   /** Most recent first. */
   listening: readonly ListeningAttempt[]
   mistakes: readonly MistakeItem[]
-  learningWords: number
+  /** Word-game words due for review. */
+  wordsDue?: number
   now: number
 }
 
@@ -189,7 +199,7 @@ export function recommendations(input: RecInput, max = 3): Rec[] {
   push(fiblFirst ? listeningRecs[0] : listeningRecs[listeningRecs.length - 1])
 
   if (due > 0 && due < 3) push({ kind: 'review', due })
-  if (input.learningWords >= 5) push({ kind: 'words', learning: input.learningWords })
+  if ((input.wordsDue ?? 0) >= 3) push({ kind: 'words', learning: input.wordsDue ?? 0 })
 
   // Nothing specific to fix: a realistic passage, or exam conditions once she's steady.
   if (out.length < max) {

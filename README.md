@@ -25,7 +25,8 @@ daily practice to it.
 | Mistake bank | Every missed or wrongly-clicked HIW word (any mode with clickable words) plus FIB-L/WFD spelling slips (Quick review: hear it → type it), spaced review at 10 min → 1 day → 3 days → 7 days. Quick review flashcards replay each word's audio clip; full-passage review uses *different* passages with the same confusion |
 | Hear the difference | Every missed word: hear the on-screen and spoken words (dictionary audio, device voice fallback) alone or back to back, replay the clip, look up either word |
 | Coach view | Learner shares read-only progress with a coach's account (Settings → Share my progress); `/coach` shows effort, skills, a by-day table and recent results, sends notes to her Home, and copies a text summary for an AI/teacher |
-| My words | Tap any word on a results page → definition (Free Dictionary API, Wiktionary fallback — only the word is sent), pronunciation, Cambridge 英漢（繁）link, add to a personal list with learned count and milestones; synced across devices |
+| My words | Tap any word on a results page → offline Chinese meaning, definition (Free Dictionary API, Wiktionary fallback — only the word is sent), pronunciation, Cambridge 英漢（繁）search link + Yahoo 奇摩字典 backup, add to a personal list with learned count and milestones; synced across devices |
+| PTE words | 3,932-word PTE list in 79 packs of 50 (most-tested first), 3-minute game rounds: new-word card with the real sentence from her passages, meaning, hear-and-pick among same-ending look-alikes, reverse, fill the gap, spelling; spaced review; Quick sort; Speed match; recorded pronunciations |
 | Content | **28 human-voice items**: excerpts of Spoken Wikipedia recordings (real readers, varied accents, CC BY-SA), word-timed with Whisper, swaps written by hand · plus 34 original passages voiced with Kokoro TTS. Mismatch counts vary 0–7 per item. No Pearson material |
 | Custom | Paste displayed + spoken text → mismatches auto-detected and categorised; browser voice (approximate) or uploaded audio (+ optional timestamps) |
 
@@ -96,11 +97,27 @@ npm run human:verify  # re-transcribe clips and check alignment
 sentence-aligned exam-length excerpts (85–125 words, 32–50 s) with word timings, the spoken intro skipped,
 low-confidence words flagged. Swaps are written by hand in [`content/human/items.txt`](content/human/items.txt)
 (`spoken>display category`, compiled by `scripts/items_from_text.py`, which rejects ambiguous or missing
-words). `verify` re-transcribes every finished clip and checks its words and timings against the tokens. Excerpts with transcription errors that couldn't be verified against
+words; `scripts/suggest_swaps.py` lists exam-style look-alikes for each word). Swaps follow the exam's style: whole-word
+look-alikes that keep the ending (attention→retention) or the start (valid→vital), some near-synonyms, rarely grammar-only
+changes, and only PTE-level words on both sides. `verify` re-transcribes every finished clip and checks its words and timings against the tokens. Excerpts with transcription errors that couldn't be verified against
 the article text were not used, since a mis-transcribed word would show the learner an accidental mismatch.
 
 Licence: the recordings are CC BY-SA; each exercise carries its reader, licence and source link, shown on its
 results page. The cut clips are adaptations and remain CC BY-SA.
+
+## PTE word list
+
+```bash
+.venv-tts/bin/pip install opencc-python-reimplemented
+.venv-tts/bin/python scripts/build_words.py        # public/content/words.json (after the library is built)
+.venv-tts/bin/python scripts/build_word_audio.py   # public/audio/words/*.mp3 (Kokoro, only missing ones)
+```
+
+Sources are downloaded once into `.cache/words/`: [ECDICT](https://github.com/skywind3000/ECDICT) (MIT: Chinese
+meanings, phonetics, IELTS/TOEFL/CET-6 tags, frequency), [NAWL and NGSL](https://www.newgeneralservicelist.com)
+(CC BY-SA 4.0), plus `content/words/pte-extra.txt`. `scripts/words.py` assigns every word a level (basic · pte · ok ·
+rare); `human:build` stores it on each token so FIB-L blanks and WFD sentences avoid specialist terms and jargon-heavy
+passages are marked harder.
 
 ## Content pipeline (synthetic passages)
 

@@ -34,6 +34,9 @@ from pathlib import Path
 
 import numpy as np
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from words import lexicon  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 HUMAN = ROOT / "content" / "human"
 CACHE = ROOT / ".cache" / "spoken"
@@ -306,6 +309,7 @@ def build():
     # Older items (short human excerpts, synthetic passages) stay resolvable for past attempts
     # but are archived: never offered for practice again.
     library = [{**e, "archived": True} for e in json.loads(LIBRARY.read_text()) if e["id"] not in new_ids]
+    lx = lexicon()
     rate = 44_100
     pcm_cache: dict[str, np.ndarray] = {}
     for it in items:
@@ -345,6 +349,9 @@ def build():
                 raise SystemExit(f"{it['id']}: swap at {w['orig']} expects '{sw['from']}' but the word is '{core}'")
             if sw and sw["display"].lower() == core.lower():
                 raise SystemExit(f"{it['id']}: swap at {i} does not change '{core}'")
+            # PTE study word or jargon (never a FIB-L blank or WFD word); proper nouns are neither.
+            proper = core[:1].isupper() and tokens and not re.search(r"[.!?]", tokens[-1]["trailing"])
+            level = None if proper else lx.level(core)
             tokens.append(
                 {
                     "index": i,
@@ -354,14 +361,16 @@ def build():
                     "endMs": round((w["e"] - t0) * 1000),
                     "isIncorrect": bool(sw),
                     **({"trapCategory": sw["cat"]} if sw else {}),
+                    **({"vocab": level} if level in ("pte", "ok", "rare") else {}),
                     "leading": lead,
                     "trailing": trail,
                 }
             )
         words_n = len(tokens)
         wpm = words_n / (max(1.0, c["end"] - c["start"]) / 60)
-        # 1 easier (slower/shorter) · 2 exam standard · 3 harder (fast or long)
-        auto_level = 1 if wpm < 128 or (wpm < 138 and words_n < 95) else 3 if wpm >= 170 else 2
+        # 1 easier (slower/shorter) · 2 exam standard · 3 harder (fast, or full of specialist terms)
+        rare = sum(t.get("vocab") == "rare" for t in tokens) / max(1, words_n)
+        auto_level = 3 if wpm >= 170 or rare > 0.08 else 1 if wpm < 128 or (wpm < 138 and words_n < 95) else 2
         src = dict(c["source"])
         artist = re.sub(r"^(Speaker:|The original uploader was)\s*", "", src["artist"]).split("\n")[0].strip()
         src["artist"] = re.sub(r"\s+at English Wikipedia.*$", "", artist) or "Wikimedia contributor"

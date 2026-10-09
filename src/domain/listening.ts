@@ -98,18 +98,22 @@ function hash(s: string): number {
   return h >>> 0
 }
 
-/** How well a word works as a blank: exam blanks favour content words with endings worth hearing. */
+/**
+ * How well a word works as a blank: exam blanks are words from the PTE word list, favouring endings
+ * worth hearing. Specialist terms never are.
+ */
 function blankScore(tokens: readonly Token[], i: number): number {
   const t = tokens[i]
   const w = t.spokenText
-  // Plain words only: no hyphens/apostrophes (unfair to type), no very long technical terms.
-  if (!/^[A-Za-z][a-z]*$/.test(w) || w.length < 4 || w.length > 13 || STOP.has(w.toLowerCase())) return 0
+  // Plain words only: no hyphens/apostrophes (unfair to type), no jargon or very long technical terms.
+  if (t.vocab === 'rare' || t.vocab === 'ok' || !/^[A-Za-z][a-z]*$/.test(w) || w.length < 4 || w.length > 13 || STOP.has(w.toLowerCase())) return 0
   const prev = tokens[i - 1]
   const sentenceStart = !prev || /[.!?]/.test(prev.trailing)
   if (/^[A-Z]/.test(w) && !sentenceStart) return 0 // proper nouns: unfair to spell
   let s = 1 + Math.min(w.length, 9) / 6
   if (/(s|ed|ing|ly|tion|sion|ment|ance|ence|ity|ive|al)$/.test(w)) s += 1 // endings are what candidates miss
-  if (w.length > 10) s -= 0.8 // prefer everyday academic words over jargon
+  if (t.vocab === 'pte') s += 1.5 // the words PTE actually tests
+  if (w.length > 10) s -= 0.8
   return s
 }
 
@@ -170,7 +174,10 @@ export interface WfdSentence {
   words: string[]
 }
 
-/** Sentences of 8–15 words and ≤ 6.5 s, without digits (dictated numbers are ambiguous to type). */
+/**
+ * Sentences of 8–15 words and ≤ 6.5 s, without digits (dictated numbers are ambiguous to type) or
+ * specialist terms (real WFD sentences use everyday academic English).
+ */
 export function extractWfd(exercises: readonly Exercise[]): WfdSentence[] {
   const out: WfdSentence[] = []
   for (const ex of exercises) {
@@ -189,7 +196,7 @@ export function extractWfd(exercises: readonly Exercise[]): WfdSentence[] {
         span.length <= 15 &&
         start > 0 && // a sentence that begins the clip may be clipped at the start
         endMs - startMs <= 6500 &&
-        span.every((t) => !/\d/.test(t.spokenText) && t.spokenText.length < 18)
+        span.every((t) => !/\d/.test(t.spokenText) && t.spokenText.length < 18 && t.vocab !== 'rare')
       if (ok) {
         const words = span.map((t) => t.spokenText)
         out.push({
@@ -301,7 +308,8 @@ export interface ListeningStats {
   topWords: { word: string; count: number }[]
 }
 
-export function listeningStats(attempts: readonly ListeningAttempt[]): ListeningStats {
+export function listeningStats(all: readonly ListeningAttempt[]): ListeningStats {
+  const attempts = all.filter((a) => a.task !== 'words')
   const task = (k: ListeningAttempt['task']): TaskStats => {
     const xs = attempts.filter((a) => a.task === k)
     const correct = xs.reduce((n, a) => n + a.correct, 0)

@@ -27,7 +27,7 @@ export interface DayRow {
 export interface RecentResult {
   at: number
   title: string
-  task: 'HIW' | 'FIB-L' | 'WFD'
+  task: 'HIW' | 'FIB-L' | 'WFD' | 'Words'
   mode: string
   /** HIW: changed words caught / total. FIB-L, WFD: words right / total. */
   score: string
@@ -121,8 +121,8 @@ export function coachSummary(input: {
     ...listening.slice(0, 10).map(
       (a): RecentResult => ({
         at: a.completedAt,
-        title: a.task === 'fibl' ? (exById.get(a.exerciseId)?.title ?? a.exerciseId) : `${a.items.length} sentences`,
-        task: a.task === 'fibl' ? 'FIB-L' : 'WFD',
+        title: a.task === 'fibl' ? (exById.get(a.exerciseId)?.title ?? a.exerciseId) : a.task === 'words' ? `${a.items.length} questions` : `${a.items.length} sentences`,
+        task: a.task === 'fibl' ? 'FIB-L' : a.task === 'words' ? 'Words' : 'WFD',
         mode: a.mode,
         score: `${a.correct}/${a.total}`,
       }),
@@ -162,7 +162,7 @@ export function coachMarkdown(name: string, s: CoachSummary, now: number): strin
   L.push(`# PTE listening practice — ${name}`, '', `Generated ${new Date(now).toISOString().slice(0, 16).replace('T', ' ')} UTC.`, '')
   L.push('## Effort')
   L.push(`- Active ${s.daysActive14} of the last 14 days; last practice ${s.lastActive ? new Date(s.lastActive).toISOString().slice(0, 10) : 'never'}`)
-  L.push(`- Last 7 days: ${s.week.done} questions/sets, ${s.week.minutes} min, ${s.week.caught} HIW words caught, ${s.week.written} FIB-L/WFD words written correctly`)
+  L.push(`- Last 7 days: ${s.week.done} questions/sets, ${s.week.minutes} min, ${s.week.caught} HIW words caught, ${s.week.written} FIB-L/WFD words written correctly, ${s.week.words} word-game answers right`)
   L.push(`- All time: ${s.lifetime.done} questions/sets, ${s.lifetime.minutes} min`)
   L.push('', '## Highlight Incorrect Words (last 25 scored vs previous 25)')
   L.push(`- Catch rate (changed words found): ${pct(s.hiw.recall)} (before ${pct(s.hiwBefore.recall)})`)

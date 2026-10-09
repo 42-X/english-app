@@ -4,11 +4,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAppState } from '../../app/state'
 import { markNoteRead, unreadNotes, type CoachNote } from '../../data/coach'
 import { db } from '../../data/db'
+import { wordProgress } from '../../data/words'
 import { addListeningToPlan, isOnboarded, trimPlan, liveMistakes, liveVocab, markOnboarded, recentAttempts, recentListening, startOverclickTest, todaysPlan } from '../../data/repo'
 import { requestSync } from '../../data/sync'
 import { speedAdvice, targetLevel, weaknesses } from '../../domain/adaptive'
 import { speedCoaching } from '../../domain/coaching'
-import { accuracyChange, activeDays, lastSevenDays, milestone, milestoneReachedToday, recommendations, sessions, wins, type Rec, type Wins } from '../../domain/momentum'
+import { accuracyChange, activeDays, lastSevenDays, milestone, milestoneReachedToday, recommendations, points, sessions, wins, type Rec, type Wins } from '../../domain/momentum'
 import { estimatedMinutes, localDate, QUEST_MAX } from '../../domain/plan'
 import { compare } from '../../domain/report'
 import { isDue, MASTERED, REVIEW_SESSION } from '../../domain/srs'
@@ -16,6 +17,7 @@ import type { Attempt, DailyPlan, ListeningAttempt, PlanItem } from '../../domai
 import { useCoachText, useI18n } from '../../i18n'
 import { pct, speedLabel } from '../../ui/format'
 import { Button, ButtonLink, Card, CoachLine, Disclosure } from '../../ui/kit'
+import { WordsCard } from '../words/WordsCard'
 import { useKeepGoing } from './keepGoing'
 
 const DAY = 86_400_000
@@ -56,6 +58,7 @@ export function HomePage() {
   const listening = useLiveQuery(() => recentListening(undefined, 2000), [], [])
   const mistakes = useLiveQuery(() => liveMistakes(), [], [])
   const vocab = useLiveQuery(() => liveVocab(), [], [])
+  const wordRows = useLiveQuery(() => wordProgress(), [], undefined)
   const onboarded = useLiveQuery(() => isOnboarded(), [], true)
 
   const startTest = async () => {
@@ -73,7 +76,8 @@ export function HomePage() {
   const today = wins(attempts, listening, todayStart)
   const due = mistakes.filter((m) => isDue(m, now)).length
   const mastered = mistakes.filter((m) => m.step >= MASTERED).length
-  const recs = recommendations({ exercises, attempts, listening, mistakes, learningWords: vocab.filter((v) => v.status === 'learning').length, now })
+  const wordsDue = wordRows ? [...wordRows.values()].filter((w) => !w.knewAlready && w.dueAt !== undefined && w.dueAt <= now).length : 0
+  const recs = recommendations({ exercises, attempts, listening, mistakes, wordsDue, now })
   const advice = speedAdvice(attempts, settings.speed)
   const speedLine = speedCoaching(advice)
   const hour = new Date().getHours()
@@ -95,9 +99,11 @@ export function HomePage() {
 
       <CoachNotes />
 
-      <Momentum days={days} now={now} lifetime={lifetime.caught + lifetime.written} today={today} />
+      <Momentum days={days} now={now} lifetime={points(lifetime)} today={today} />
 
-      <Quest plan={plan} todayMinutes={today.minutes} todayPoints={today.caught + today.written} onKeepGoing={() => void keepGoing()} />
+      <Quest plan={plan} todayMinutes={today.minutes} todayPoints={points(today)} onKeepGoing={() => void keepGoing()} />
+
+      <WordsCard />
 
       {recs.length > 0 && (
         <Card title={t('home.recTitle')}>
@@ -224,7 +230,7 @@ function Momentum({ days, now, lifetime, today }: { days: ReadonlySet<string>; n
   const { t, lang } = useI18n()
   const week = lastSevenDays(days, now)
   const m = milestone(lifetime)
-  const passed = milestoneReachedToday(lifetime - today.caught - today.written, lifetime)
+  const passed = milestoneReachedToday(lifetime - points(today), lifetime)
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
       <div className="rounded-xl border border-line bg-surface px-4 py-3">
@@ -408,7 +414,7 @@ function recLink(r: Rec, speed: number): string {
     case 'review':
       return '/review/quick'
     case 'words':
-      return '/mistakes?tab=words'
+      return '/words/play'
     case 'wfd':
       return '/wfd?mode=practice'
     case 'fibl':
@@ -438,7 +444,7 @@ function RecCard({ rec, speed }: { rec: Rec; speed: number }) {
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-semibold text-ink">{tk(`rec.${rec.kind}.title`, params)}</span>
-        <span className="mt-0.5 block text-xs leading-relaxed text-ink-2">{tk(`rec.${rec.kind}.why`)}</span>
+        <span className="mt-0.5 block text-xs leading-relaxed text-ink-2">{tk(`rec.${rec.kind}.why`, params)}</span>
       </span>
       <span aria-hidden className="text-accent">
         →
@@ -469,7 +475,7 @@ function ThisWeek({ now, attempts, listening }: { now: number; attempts: readonl
   }
   return (
     <Card title={t('home.weekTitle')}>
-      <p className="text-sm text-ink">{t('home.weekStats', { done: w.done, min: w.minutes, pts: w.caught + w.written })}</p>
+      <p className="text-sm text-ink">{t('home.weekStats', { done: w.done, min: w.minutes, pts: points(w) })}</p>
       <div className="mt-2">
         {ups.length > 0 ? (
           <ul className="space-y-1 text-sm">

@@ -31,10 +31,20 @@ export default defineConfig({
       workbox: {
         // App shell + exercise library are precached; audio is cached on first use.
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}', 'content/*.json'],
-        // The exercise library (~2.3 MB, ~400 KB gzipped) must be precached for offline practice.
+        // The exercise library (~2.3 MB, ~400 KB gzipped) and word list (~850 KB) must be precached for offline practice.
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         navigateFallback: '/index.html',
         runtimeCaching: [
+          {
+            // Word pronunciations (~6 KB each): kept separately so they never push out passage audio.
+            urlPattern: ({ url }) => url.pathname.startsWith('/audio/words/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'hiw-word-audio',
+              cacheableResponse: { statuses: [200] },
+              expiration: { maxEntries: 4000 },
+            },
+          },
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/audio/'),
             handler: 'CacheFirst',

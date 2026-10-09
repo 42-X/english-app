@@ -119,7 +119,7 @@ function Overview({ name, s, now }: { name: string; s: CoachSummary; now: number
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat label="Days active (14 d)" value={s.daysActive14} />
         <Stat label="This week" value={`${s.week.minutes} min`} sub={`${s.week.done} questions`} />
-        <Stat label="Words earned this week" value={s.week.caught + s.week.written} sub="HIW caught + typed right" />
+        <Stat label="Points this week" value={s.week.caught + s.week.written + s.week.words} sub="HIW caught + typed right + word games" />
         <Stat label="Review bank" value={s.mistakes.total} sub={`${s.mistakes.due} due · ${s.mistakes.mastered} mastered`} />
       </div>
     </Card>

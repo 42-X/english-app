@@ -6,7 +6,7 @@ import { requestSync } from '../../data/sync'
 import type { VocabEntry } from '../../domain/types'
 import { nextMilestone } from '../../domain/vocab'
 import { useI18n } from '../../i18n'
-import { Badge, Button, Card, Segmented } from '../../ui/kit'
+import { Badge, Button, ButtonLink, Card, Segmented } from '../../ui/kit'
 import { Replay } from '../results/ResultsPage'
 import { chineseDictionaryUrl, pronounce, WordSheet, type WordTarget } from './WordSheet'
 
@@ -55,6 +55,12 @@ export function VocabList() {
           )}
         </div>
         {words.length === 0 && <p className="mt-3 text-sm text-ink-2">{t('vocab.empty')}</p>}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-accent-soft px-3 py-2">
+          <span className="text-sm text-ink">📚 {t('vocab.pteGames')}</span>
+          <ButtonLink className="px-3 py-1.5" to="/words">
+            {t('words.title')} →
+          </ButtonLink>
+        </div>
         <form
           className="mt-4 flex gap-2"
           onSubmit={(e) => {

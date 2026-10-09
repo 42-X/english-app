@@ -316,7 +316,7 @@ export async function lookupWord(raw: string): Promise<DictionaryResult | null |
 
 /** Fill in definitions for words saved while offline (called from the word list). */
 export async function backfillDefinitions(limit = 5): Promise<void> {
-  const missing = (await db.vocab.toArray()).filter((v) => !v.deleted && v.meanings.length === 0).slice(0, limit)
+  const missing = (await db.vocab.toArray()).filter((v) => !v.deleted && !v.source && v.meanings.length === 0).slice(0, limit)
   for (const v of missing) {
     const r = await lookupWord(v.id)
     if (r === 'offline') return
@@ -328,16 +328,20 @@ export async function saveWord(raw: string, extra: Partial<VocabEntry>, dict: Di
   const id = headword(raw)
   const now = Date.now()
   const existing = await db.vocab.get(id)
+  const prev = existing && !existing.deleted ? existing : undefined
   const entry: VocabEntry = {
+    // Keeps any word-game progress on the word.
+    ...prev,
     id,
-    word: dict?.word || id,
-    phonetic: dict?.phonetic,
-    audioUrl: dict?.audioUrl,
-    meanings: dict?.meanings ?? [],
-    status: 'learning',
-    addedAt: now,
-    ...(existing && !existing.deleted ? { addedAt: existing.addedAt, status: existing.status, knownAt: existing.knownAt } : {}),
+    word: dict?.word || prev?.word || id,
+    phonetic: dict?.phonetic ?? prev?.phonetic,
+    audioUrl: dict?.audioUrl ?? prev?.audioUrl,
+    meanings: dict?.meanings ?? prev?.meanings ?? [],
+    status: prev?.status ?? 'learning',
+    addedAt: prev?.addedAt ?? now,
     ...extra,
+    // Saved by her now, so it's listed in My words.
+    source: undefined,
     updatedAt: now,
   }
   await db.vocab.put({ ...entry, dirty: 1, deleted: undefined })
@@ -348,12 +352,16 @@ export async function setWordStatus(id: string, status: VocabEntry['status']): P
   await db.vocab.update(id, { status, knownAt: status === 'known' ? now : undefined, updatedAt: now, dirty: 1 })
 }
 
+/** Remove from My words; a word she is also learning in the word games stays there. */
 export async function removeWord(id: string): Promise<void> {
-  await db.vocab.update(id, { deleted: 1, updatedAt: Date.now(), dirty: 1 })
+  const row = await db.vocab.get(id)
+  const change = row?.level !== undefined ? { source: 'game' as const } : { deleted: 1 as const }
+  await db.vocab.update(id, { ...change, updatedAt: Date.now(), dirty: 1 })
 }
 
+/** My words: the words she saved (not ones she has only met in the word games). */
 export async function liveVocab(): Promise<VocabEntry[]> {
-  return (await db.vocab.toArray()).filter((v) => !v.deleted)
+  return (await db.vocab.toArray()).filter((v) => !v.deleted && !v.source)
 }
 
 // ── Backup ──────────────────────────────────────────────────────────

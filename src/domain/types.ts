@@ -48,6 +48,11 @@ export interface Token {
   endMs: number
   isIncorrect: boolean
   trapCategory?: TrapCategory
+  /**
+   * The spoken word's level (absent for everyday words and names): a PTE study word, a less common
+   * word (fine to hear, not a blank) or a specialist term (never a blank or dictation word).
+   */
+  vocab?: 'pte' | 'ok' | 'rare'
   /** Punctuation / quotes shown before and after the word; never selectable. */
   leading: string
   trailing: string
@@ -266,10 +271,21 @@ export interface VocabEntry {
   status: 'learning' | 'known'
   addedAt: number
   knownAt?: number
+  /** Traditional Chinese meaning (word games). */
+  zh?: string
+  /** Word games: 0 just met … 4+ learned (see domain/words.ts). Absent for words only saved. */
+  level?: number
+  /** Word games: when it's next asked. */
+  dueAt?: number
+  /** Started by the word games rather than saved by her; such words aren't listed in My words. */
+  source?: 'game'
+  /** Sorted as "I already know this" in the word games: not counted as learned there. */
+  knewAlready?: boolean
   updatedAt: number
 }
 
-export type ListeningTask = 'fibl' | 'wfd'
+/** FIB-L, WFD, or a word-game round (one item per question, `ref` = the word). */
+export type ListeningTask = 'fibl' | 'wfd' | 'words'
 
 /** One FIB-L blank or one WFD sentence. */
 export interface ListeningItemResult {

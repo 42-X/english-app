@@ -106,6 +106,7 @@ function DailySummary({ plan, attempts, recent, listening }: Props) {
         <Stat label={t('report.day.minutes')} value={t('home.minutes', { n: w.minutes })} />
         <Stat label={t('report.day.caught')} value={w.caught} tone={w.caught ? 'good' : undefined} />
         {w.written > 0 && <Stat label={t('report.day.written')} value={w.written} tone="good" />}
+        {w.words > 0 && <Stat label={t('report.day.words')} value={w.words} tone="good" />}
         {w.perfect > 0 && <Stat label={t('report.day.perfect')} value={w.perfect} tone="good" />}
       </div>
 

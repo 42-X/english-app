@@ -3,7 +3,7 @@ import { speedAdvice, targetLevel, weaknesses } from './adaptive'
 import { falsePositiveRows, mismatchRows, summarize } from './analysis'
 import { clickLatencyMs, latencyBucket } from './latency'
 import { buildBonusRound, buildDailyPlan, buildOverclickTest, localDate, mismatchCount, trimLegacyQuest } from './plan'
-import { lastSevenDays, milestone, milestoneReachedToday, recommendations, resultMood, wins } from './momentum'
+import { lastSevenDays, milestone, milestoneReachedToday, points, recommendations, resultMood, wins } from './momentum'
 import { overclickReport, pointLosses, rollingDiagnosis, sessionSummary } from './report'
 import { finalSelection, scoreSelection } from './scoring'
 import { isDue, recordMistake, reviewMistake, INTERVALS, MASTERED } from './srs'
@@ -11,6 +11,23 @@ import { blackoutRecoveries, lossEvents, syncMetrics, syncSegments } from './syn
 import { diffTranscripts, guessTrapCategory, splitWords } from './text'
 import { spokenIndexAt } from './timing'
 import type { Attempt, Exercise, Token, TrackingSample, TrapCategory } from './types'
+import {
+  answerWord,
+  buildQuestions,
+  currentPack,
+  glossOf,
+  isLearned,
+  knewAlready,
+  LEARNED,
+  makeQuestion,
+  planRound,
+  questionKind,
+  seeded,
+  sentenceAround,
+  WORD_INTERVALS,
+  type StudyWord,
+  type WordProgress,
+} from './words'
 
 function tokens(n: number, incorrect: Record<number, TrapCategory> = {}): Token[] {
   return Array.from({ length: n }, (_, i) => ({
@@ -685,7 +702,7 @@ describe('momentum', () => {
       recordMistake(undefined, { type: 'miss', display: `x${k}`, spoken: `y${k}`, exerciseId: 'a', tokenIndex: 3, context: '' }, 0),
     )
     const overclicky = Array.from({ length: 5 }, () => attempt({ ex: lib[0], selected: [3, 1, 2, 4, 5] }))
-    const recs = recommendations({ exercises: lib, attempts: overclicky, listening: [], mistakes: due, learningWords: 0, now: INTERVALS[0] + 1 })
+    const recs = recommendations({ exercises: lib, attempts: overclicky, listening: [], mistakes: due, now: INTERVALS[0] + 1 })
     expect(recs[0]).toMatchObject({ kind: 'review', due: 3 })
     expect(recs[1]).toMatchObject({ kind: 'overclicking', exerciseId: 'o' })
     expect(recs).toHaveLength(3)
@@ -715,5 +732,129 @@ describe('coach summary', () => {
     const md = coachMarkdown('Learner', s, now)
     expect(md).toContain('# PTE listening practice — Learner')
     expect(md).toContain('| HIW | practice | Passage one | 2/3 |')
+  })
+})
+
+describe('PTE words', () => {
+  const word = (w: string, pack = 1, extra: Partial<StudyWord> = {}): StudyWord => ({ w, p: 'adj.', zh: `adj. ${w}的意思`, en: `${w} means`, ipa: '', pack, ...extra })
+  const list = [
+    word('efficient', 1, { alike: ['sufficient', 'deficient', 'proficient'], ex: ['ex', 3] }),
+    word('adequate', 1, { alike: ['accurate'] }),
+    word('retention', 1, { alike: ['attention', 'intention', 'detention'] }),
+    word('integrate', 1),
+    word('sustain', 1),
+    word('perception', 2),
+    word('obtain', 2),
+  ]
+
+  it('moves a word up a level per right answer and back a little on a miss', () => {
+    expect(answerWord(undefined, true, 0)).toEqual({ level: 1, dueAt: WORD_INTERVALS[1] })
+    expect(answerWord({ level: 3 }, true, 0)).toEqual({ level: 4, dueAt: WORD_INTERVALS[4] })
+    expect(answerWord({ level: 5 }, true, 0).level).toBe(5)
+    expect(answerWord({ level: 5 }, false, 0)).toEqual({ level: 2, dueAt: WORD_INTERVALS[1] })
+    expect(answerWord({ level: 0 }, false, 0).level).toBe(0)
+    expect(isLearned({ id: 'x', status: 'known', level: LEARNED })).toBe(true)
+    expect(isLearned({ id: 'x', status: 'known', level: 5, knewAlready: true })).toBe(false)
+  })
+
+  it('plans a round: overdue words first, then 2–4 new words from the current pack', () => {
+    const progress = new Map<string, WordProgress>([
+      ['efficient', { id: 'efficient', status: 'learning', level: 1, dueAt: 50 }],
+      ['adequate', { id: 'adequate', status: 'learning', level: 2, dueAt: 10 }],
+      ['retention', { id: 'retention', status: 'learning', level: 2, dueAt: 999 }],
+      ['integrate', { id: 'integrate', status: 'known', ...knewAlready(0) }],
+    ])
+    const plan = planRound(list, progress, 100)
+    expect(plan.review.map((w) => w.w)).toEqual(['adequate', 'efficient'])
+    expect(plan.fresh.map((w) => w.w)).toEqual(['sustain', 'perception', 'obtain'])
+    expect(currentPack(list, progress)).toBe(1)
+    expect(planRound(list, progress, 100, 2).fresh.map((w) => w.w)).toEqual(['perception', 'obtain'])
+  })
+
+  it('meets each new word before asking it, with the answer among the options', () => {
+    const plan = { review: [list[0], list[1]], fresh: [list[2], list[3]] }
+    const progress = new Map<string, WordProgress>([
+      ['efficient', { id: 'efficient', status: 'learning', level: 1, dueAt: 0 }],
+      ['adequate', { id: 'adequate', status: 'learning', level: 3, dueAt: 0 }],
+    ])
+    const qs = buildQuestions(plan, progress, list, seeded(1))
+    expect(qs).toHaveLength(6)
+    for (const w of ['retention', 'integrate']) {
+      const meet = qs.findIndex((q) => q.word.w === w && q.kind === 'meet')
+      const ask = qs.findIndex((q) => q.word.w === w && q.kind !== 'meet')
+      expect(meet).toBeGreaterThanOrEqual(0)
+      expect(ask).toBeGreaterThan(meet + 1)
+    }
+    for (const q of qs.filter((x) => x.options.length)) {
+      expect(q.options).toContain(q.answer)
+      expect(new Set(q.options).size).toBe(q.options.length)
+    }
+    expect(buildQuestions(plan, progress, list, seeded(1))).toEqual(qs)
+  })
+
+  it('asks look-alike questions only for words that have look-alikes', () => {
+    for (let s = 0; s < 20; s++) {
+      expect(questionKind(list[3], 1, seeded(s))).toBe('meaning') // no look-alikes, no sentence
+      expect(['listen', 'meaning']).toContain(questionKind(list[0], 1, seeded(s)))
+    }
+    const q = makeQuestion('listen', list[2], list, seeded(3))
+    expect(q.options.sort()).toEqual(['attention', 'detention', 'intention', 'retention'])
+  })
+
+  it('cuts the spoken sentence around a word', () => {
+    const ex = exercise(12)
+    ex.tokens.forEach((t, i) => (t.spokenText = `w${i}`))
+    ex.tokens[3].trailing = '.'
+    ex.tokens[8].trailing = '.'
+    const s = sentenceAround(ex, 6)
+    expect(s).toMatchObject({ before: 'w4 w5 ', word: 'w6', after: ' w7 w8.' })
+    expect(s!.startMs).toBe(ex.tokens[4].startMs - 150)
+  })
+
+  it('finds a Chinese meaning through an inflected form', () => {
+    const data = { words: list, gloss: { civilizations: '=efficient', ventral: 'adj. 腹的' } }
+    const by = new Map(list.map((w) => [w.w, w]))
+    expect(glossOf(data, by, 'Efficient')).toEqual({ zh: list[0].zh })
+    expect(glossOf(data, by, 'civilizations')).toEqual({ zh: list[0].zh, lemma: 'efficient' })
+    expect(glossOf(data, by, 'ventral')).toEqual({ zh: 'adj. 腹的' })
+    expect(glossOf(data, by, 'unknown')).toBeNull()
+  })
+
+  it('counts word-game answers as points, separately from words written', () => {
+    const round = { id: 'r', task: 'words' as const, exerciseId: 'words', mode: 'practice' as const, items: [], correct: 9, total: 10, startedAt: 0, completedAt: 60_000, updatedAt: 0 }
+    const w = wins([], [round])
+    expect(w).toMatchObject({ written: 0, words: 9, minutes: 1, done: 1 })
+    expect(points(w)).toBe(9)
+  })
+})
+
+describe('PTE level of passage words', () => {
+  it('never blanks or dictates specialist terms', async () => {
+    const { extractWfd, fiblBlanks } = await import('./listening')
+    const words = 'Researchers measured how primordial ventral structures develop and whether efficient transport improves the overall stability of membranes in several important organisms today.'.split(' ')
+    const ex = exercise(words.length, {}, { id: 'lvl', tags: ['human-audio'] })
+    ex.tokens.forEach((t, i) => {
+      t.spokenText = t.displayText = words[i].replace(/[.,]/g, '')
+      t.trailing = /[.]$/.test(words[i]) ? '.' : ''
+      if (['primordial'].includes(t.spokenText)) t.vocab = 'ok'
+      if (['ventral', 'membranes'].includes(t.spokenText)) t.vocab = 'rare'
+      if (['efficient', 'stability', 'transport'].includes(t.spokenText)) t.vocab = 'pte'
+    })
+    const blanks = fiblBlanks(ex).map((i) => ex.tokens[i].spokenText)
+    expect(blanks).not.toContain('ventral')
+    expect(blanks).not.toContain('primordial')
+    expect(blanks.filter((w) => ['efficient', 'stability', 'transport'].includes(w)).length).toBeGreaterThanOrEqual(2)
+    expect(extractWfd([ex])).toEqual([])
+  })
+
+  it('fills a weak-spot slot with a regular passage when no passage has that swap type any more', () => {
+    const lib = [exercise(30, { 3: 'near-sound' }, { id: 'a', kind: 'realistic' }), exercise(30, { 4: 'prefix' }, { id: 'b', kind: 'realistic' })]
+    const old = exercise(40, { 5: 'singular-plural', 15: 'singular-plural', 30: 'singular-plural' }, { id: 'gone' })
+    const as = Array.from({ length: 6 }, () => attempt({ ex: old, selected: [] }))
+    expect(weaknesses(as)).toContainEqual({ type: 'trap', category: 'singular-plural' })
+    const plan = buildDailyPlan({ date: 'd', exercises: lib, attempts: as, mistakes: [], speed: 1, now: 0 })
+    const drill = plan.items.find((i) => i.block === 'drill')
+    expect(drill).toBeDefined()
+    expect(drill!.reason).not.toBe('trap:singular-plural')
   })
 })

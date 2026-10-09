@@ -3,9 +3,12 @@ import { useEffect, useState } from 'react'
 import { db } from '../../data/db'
 import { lookupWord, saveWord, setWordStatus } from '../../data/repo'
 import { requestSync } from '../../data/sync'
+import { useWords } from '../../data/words'
 import { headword, type DictionaryResult } from '../../domain/vocab'
+import { glossOf } from '../../domain/words'
 import { useI18n } from '../../i18n'
 import { Badge, Button } from '../../ui/kit'
+import { sayWord, speak } from '../words/say'
 
 export interface WordTarget {
   word: string
@@ -23,16 +26,6 @@ export function pronounce(word: string, audioUrl?: string): void {
     return
   }
   speak(word)
-}
-
-function speak(word: string, onEnd?: () => void): void {
-  if (!('speechSynthesis' in window)) return onEnd?.()
-  const u = new SpeechSynthesisUtterance(word)
-  u.lang = 'en-GB'
-  u.rate = 0.85
-  if (onEnd) u.onend = u.onerror = () => onEnd()
-  speechSynthesis.cancel()
-  speechSynthesis.speak(u)
 }
 
 /** Say several words one after another with a short pause, e.g. the shown word then the spoken one. */
@@ -65,8 +58,17 @@ export function usePronunciations(words: readonly string[]): Map<string, string 
   return urls
 }
 
+/**
+ * Cambridge English–Chinese (Traditional) through its search, which opens the entry (plurals and past
+ * forms included) or, for a word it doesn't have, a list of suggestions — never its home page.
+ */
 export function chineseDictionaryUrl(word: string): string {
-  return `https://dictionary.cambridge.org/dictionary/english-chinese-traditional/${encodeURIComponent(headword(word))}`
+  return `https://dictionary.cambridge.org/search/direct/?datasetsearch=english-chinese-traditional&q=${encodeURIComponent(headword(word))}`
+}
+
+/** Yahoo 奇摩字典: Traditional Chinese for almost any word, including specialist terms Cambridge lacks. */
+export function yahooDictionaryUrl(word: string): string {
+  return `https://tw.dictionary.search.yahoo.com/search?p=${encodeURIComponent(headword(word))}`
 }
 
 /** Bottom sheet with a word's pronunciation, definitions and "Add to My words". */
@@ -75,7 +77,11 @@ export function WordSheet({ target, onClose }: { target: WordTarget; onClose: ()
   const id = headword(target.word)
   const [dict, setDict] = useState<DictionaryResult | null | 'offline' | undefined>(undefined)
   const saved = useLiveQuery(() => db.vocab.get(id), [id])
-  const inList = !!saved && !saved.deleted
+  const inList = !!saved && !saved.deleted && !saved.source
+  const words = useWords()
+  const study = words?.byWord.get(id)
+  const gloss = words ? glossOf(words.data, words.byWord, id) : null
+  const pteWord = study ?? (gloss?.lemma ? words?.byWord.get(gloss.lemma) : undefined)
   const other = usePronunciations(target.compareWith ? [target.compareWith] : [])
 
   useEffect(() => {
@@ -118,7 +124,7 @@ export function WordSheet({ target, onClose }: { target: WordTarget; onClose: ()
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button className="px-3 py-1.5" onClick={() => pronounce(id, info?.audioUrl)}>
+          <Button className="px-3 py-1.5" onClick={() => (study ? sayWord(id) : pronounce(id, info?.audioUrl))}>
             🔊 {t('vocab.pronounce')}
           </Button>
           {target.compareWith && (
@@ -127,14 +133,28 @@ export function WordSheet({ target, onClose }: { target: WordTarget; onClose: ()
             </Button>
           )}
           <a className="inline-flex items-center rounded-lg border border-line px-3 py-1.5 text-sm text-ink-2 hover:bg-surface-2" href={chineseDictionaryUrl(id)} target="_blank" rel="noreferrer">
-            中文 ↗
+            Cambridge 中文 ↗
+          </a>
+          <a className="inline-flex items-center rounded-lg border border-line px-3 py-1.5 text-sm text-ink-2 hover:bg-surface-2" href={yahooDictionaryUrl(id)} target="_blank" rel="noreferrer">
+            Yahoo 字典 ↗
           </a>
         </div>
+
+        {gloss && (
+          <div className="mt-4 rounded-lg bg-surface-2 px-3 py-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3">
+              <span>中文</span>
+              {gloss.lemma && <span>· {t('vocab.formOf', { w: gloss.lemma })}</span>}
+              {pteWord && <Badge tone="accent">{t('vocab.pteWord', { n: pteWord.pack })}</Badge>}
+            </div>
+            <p className="mt-0.5 text-base text-ink">{gloss.zh}</p>
+          </div>
+        )}
 
         <div className="mt-4 space-y-3">
           {dict === undefined && <p className="text-sm text-ink-3">{t('common.loading')}</p>}
           {dict === 'offline' && <p className="text-sm text-ink-2">{t('vocab.offline')}</p>}
-          {dict === null && <p className="text-sm text-ink-2">{t('vocab.notFound')}</p>}
+          {dict === null && <p className="text-sm text-ink-2">{t(gloss ? 'vocab.notFoundEn' : 'vocab.notFound')}</p>}
           {info?.meanings.map((m, i) => (
             <div key={i}>
               <div className="text-xs font-medium tracking-wide text-ink-3 uppercase">{m.partOfSpeech}</div>

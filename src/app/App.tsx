@@ -10,6 +10,10 @@ import { QuickReview } from '../features/mistakes/QuickReview'
 import { FiblPage } from '../features/listening/FiblPlayer'
 import { ListeningResultsPage } from '../features/listening/ListeningResults'
 import { WfdPage } from '../features/listening/WfdSession'
+import { WordMatchPage } from '../features/words/WordMatch'
+import { WordRoundPage } from '../features/words/WordRound'
+import { WordSortPage } from '../features/words/WordSort'
+import { WordsPage } from '../features/words/WordsPage'
 import { PlayerPage } from '../features/player/PlayerPage'
 import { PracticePage } from '../features/practice/PracticePage'
 import { ProgressPage } from '../features/progress/ProgressPage'
@@ -49,6 +53,8 @@ function Localized() {
           <Route path="/play/:id" element={<PlayerPage />} />
           <Route path="/fibl/:id" element={<FiblPage />} />
           <Route path="/wfd" element={<WfdPage />} />
+          <Route path="/words/play" element={<WordRoundPage />} />
+          <Route path="/words/match" element={<WordMatchPage />} />
           <Route element={<Shell />}>
             <Route index element={<HomePage />} />
             <Route path="/practice" element={<PracticePage />} />
@@ -61,6 +67,8 @@ function Localized() {
             <Route path="/create" element={<CreatePage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/coach" element={<CoachPage />} />
+            <Route path="/words" element={<WordsPage />} />
+            <Route path="/words/sort" element={<WordSortPage />} />
             <Route path="*" element={<HomePage />} />
           </Route>
         </Routes>
